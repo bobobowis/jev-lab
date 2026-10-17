@@ -228,7 +228,7 @@ function stop() {
   stopping = true;
   server.close();
   server.closeAllConnections?.();
-  const cap = new Promise((r) => setTimeout(r, 3000).unref());
+  const cap = new Promise((r) => setTimeout(r, 3000)); // ref'd: the loop stays up until the copies go
   Promise.race([agents.closeAll(), cap]).finally(() => process.exit(0));
 }
 

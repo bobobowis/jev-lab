@@ -187,6 +187,7 @@ class AgentSession {
     if (this.exited) this.removeCopy();
     else {
       this.removeOnExit = true;
+      // Unref'd so a test or a script isn't held open; the lab's stop() keeps the loop up itself.
       setTimeout(() => this.removeCopy(), 2500).unref?.();
     }
     return this.closing;

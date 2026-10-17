@@ -86,7 +86,9 @@ test("closeAll resolves once every copy is gone, so the lab can exit right after
   const a = start({ level: 8, option: "A", extension: "x", tools: [], cwd: sandbox(), config: {}, harness: "fake" });
   const b = start({ level: 8, option: "B", extension: "x", tools: [], cwd: sandbox(), config: {}, harness: "fake" });
   a.ended(0); // a's agent already exited; b's never does, so b waits out the fallback
+  const alive = setInterval(() => {}, 1000); // like the lab's stop(): b's fallback timer is unref'd
   await closeAll();
+  clearInterval(alive);
   assert.equal(existsSync(a.cwd), false);
   assert.equal(existsSync(b.cwd), false);
   assert.equal(a.close(), a.close(), "a second close returns the same promise");

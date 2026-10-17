@@ -38,4 +38,6 @@ test("withMatrix replaces only what is between the markers, and leaves unmarked 
   assert.ok(next.endsWith(`\n\n${MATRIX_END}\noutro`));
   assert.equal(withMatrix(next), next);
   assert.equal(withMatrix("no markers"), "no markers");
+  const crlf = withMatrix(doc.replaceAll("\n", "\r\n"));
+  assert.equal(crlf, next.replaceAll("\n", "\r\n"), "a CRLF checkout keeps CRLF");
 });
