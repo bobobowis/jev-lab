@@ -56,8 +56,9 @@ export function agentEnv(model, config, driver = DRIVERS.pi, dirs = {}) {
 const sessions = new Map();
 
 /** Close every session, for a lab that is shutting down. */
+/** Close every session; resolves once their copies are removed. */
 export function closeAll() {
-  for (const s of [...sessions.values()]) s.close();
+  return Promise.all([...sessions.values()].map((s) => s.close()));
 }
 
 export function getSession(id) {
@@ -173,19 +174,26 @@ class AgentSession {
     this.idleTimer.unref?.();
   }
 
+  /** Stop the agent; resolves once the copy is removed. */
   close() {
+    if (this.closing) return this.closing;
     clearTimeout(this.idleTimer);
     sessions.delete(this.id);
     this.closed = true;
+    this.closing = new Promise((resolve) => { this.copyRemoved = resolve; });
     try { this.driver.close(); } catch { /* already gone */ }
     this.tail.stop();
     // The copy goes once the agent has let go of its files: now if it already exited, else on exit.
-    if (this.exited) return this.removeCopy();
-    this.removeOnExit = true;
-    setTimeout(() => this.removeCopy(), 2500).unref?.();
+    if (this.exited) this.removeCopy();
+    else {
+      this.removeOnExit = true;
+      setTimeout(() => this.removeCopy(), 2500).unref?.();
+    }
+    return this.closing;
   }
 
   removeCopy() {
     try { rmSync(this.cwd, { recursive: true, force: true }); } catch { /* best effort; Windows may still hold a file */ }
+    this.copyRemoved?.();
   }
 }

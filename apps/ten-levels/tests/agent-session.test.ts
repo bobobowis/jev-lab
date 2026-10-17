@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 // @ts-ignore plain JS modules
-import { agentEnv, getSession, start } from "../server/agent-session.mjs";
+import { agentEnv, closeAll, getSession, start } from "../server/agent-session.mjs";
 // @ts-ignore
 import { DRIVERS } from "../server/drivers/index.mjs";
 
@@ -80,6 +80,16 @@ test("controls: a prompt while running is refused, abort settles, close stops th
   assert.equal(getSession(s.id), undefined);
   await until(() => !existsSync(s.cwd), 4000); // removal waits 2.5 s for the agent to let go of its files
   assert.equal(existsSync(s.cwd), false);
+});
+
+test("closeAll resolves once every copy is gone, so the lab can exit right after", async () => {
+  const a = start({ level: 8, option: "A", extension: "x", tools: [], cwd: sandbox(), config: {}, harness: "fake" });
+  const b = start({ level: 8, option: "B", extension: "x", tools: [], cwd: sandbox(), config: {}, harness: "fake" });
+  a.ended(0); // a's agent already exited; b's never does, so b waits out the fallback
+  await closeAll();
+  assert.equal(existsSync(a.cwd), false);
+  assert.equal(existsSync(b.cwd), false);
+  assert.equal(a.close(), a.close(), "a second close returns the same promise");
 });
 
 test("an unknown harness is refused", () => {

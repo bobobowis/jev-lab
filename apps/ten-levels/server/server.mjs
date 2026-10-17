@@ -90,10 +90,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(refused ? 403 : 200, { "Content-Type": "application/json" });
     if (refused) return res.end(JSON.stringify({ error: refused }));
     res.end(JSON.stringify({ lab: true, stopping: true }));
-    agents.closeAll();
-    server.close();
-    server.closeAllConnections?.();
-    setTimeout(() => process.exit(0), 200).unref();
+    stop();
     return;
   }
 
@@ -224,8 +221,20 @@ const server = http.createServer(async (req, res) => {
 
 export { server };
 
+/** Stop the lab: close every session and wait for its copy to go (3 s at most), then exit. */
+let stopping = false;
+function stop() {
+  if (stopping) return;
+  stopping = true;
+  server.close();
+  server.closeAllConnections?.();
+  const cap = new Promise((r) => setTimeout(r, 3000).unref());
+  Promise.race([agents.closeAll(), cap]).finally(() => process.exit(0));
+}
+
 // Listen when run as the lab; tests import the server and listen on a port of their own.
 if (process.argv[1] && resolve(fileURLToPath(import.meta.url)).toLowerCase() === resolve(process.argv[1]).toLowerCase()) {
+  for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, stop);
   server.listen(PORT, "127.0.0.1", () => {
     const { harness } = harnessState();
     console.log(`10 Levels of Jev lab → http://127.0.0.1:${PORT} (backend: ${client.provider}, agent: ${harness ?? "none installed"})`);
