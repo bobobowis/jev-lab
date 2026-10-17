@@ -53,7 +53,7 @@
 
 ## 9. Lab agent drivers
 
-- [ ] 9.1 Add `server/spawn-cli.mjs` (PATH + PATHEXT resolution, `.cmd` through `cmd.exe /d /s /c`, tree kill with `taskkill /T /F` or a negative pid) and `tests/spawn-cli.test.ts` using a fake CLI script. Verify with `npm test` on Linux and in Windows CI.
+- [x] 9.1 Add `server/spawn-cli.mjs` (PATH + PATHEXT resolution, `.cmd` through `cmd.exe /d /s /c`, tree kill with `taskkill /T /F` or a negative pid) and `tests/spawn-cli.test.ts` using a fake CLI script. Verify with `npm test` on Linux and in Windows CI.
 - [x] 9.2 Split `server/agent-session.mjs` into the session core and `server/drivers/pi.mjs`, wire the event-dir tail from 3.2 and `JEV_STATE_DIR`, and extend `agentEnv()` with the Windows basics and per-driver credential names. Verify with `npm test` and a pi session from the lab, if pi is installed (otherwise record that it was skipped).
 - [x] 9.3 Implement `server/drivers/claude.mjs` per D6 (session config from the package's setup code, flags, allowlist mapping, stream-json → canonical events, interrupt with kill-and-resume fallback, stats from `result`). Add `tests/driver-claude.test.ts` replaying the captured lines from 1.2 through a fake CLI. Verify with `npm test`, then run Level 8 option A live in the lab under Claude.
 - [x] 9.4 Implement `server/drivers/codex.mjs` per D6 (`exec --json` per prompt, `exec resume` follow-ups, `-c` MCP and hook overrides, abort by tree kill, stats from usage). Add `tests/driver-codex.test.ts` replaying the 1.3 captures. Verify with `npm test`, then run Level 10 option A live in the lab under Codex, including the follow-up prompt.
