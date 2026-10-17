@@ -1,12 +1,12 @@
 /**
  * Lab server. Zero dependencies, node:http only.
  *
- *   GET  /api/state           { provider, live, calls }
+ *   GET  /api/state           { provider, live, calls, harnesses: [{ name, available, install }], harness }
  *   GET  /api/level/:n        { n, options: [{ key, name, file, inputs: [setA, setB, setC], call, code }] }
  *   POST /api/run/:n?option=A body { input } -> SSE stream: option-start, then per Jev call
  *                             request (state + questions) and response (typed answers + meta),
  *                             per-option events (tick, beam-step, agent-*), decision, level-done
- *   POST /api/agent/start     body { level, option, config } -> { id, model }; spawns pi in RPC mode
+ *   POST /api/agent/start     body { level, option, config, harness? } -> { id, model, harness }; harness: the body, JEV_AGENT, or the first on PATH
  *   GET  /api/agent/:id/events SSE: every session event so far, then live (agent, tool, jev, hook, stats)
  *   POST /api/agent/:id/prompt body { message }
  *   POST /api/agent/:id/abort
@@ -25,11 +25,12 @@ if (!process.env.JEV_BACKEND && !process.env.TYPESAFE_API_KEY?.trim() && !proces
 import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { extname, join, normalize } from "node:path";
+import { extname, join, normalize, resolve } from "node:path";
 import { sharedJev } from "../src/core/client.ts";
 import { SCENARIOS } from "./scenarios.mjs";
 import * as agents from "./agent-session.mjs";
 import { shutdownRefusal } from "./shutdown.mjs";
+import { chooseHarness, HarnessError, harnessState } from "./drivers/index.mjs";
 
 const DIST = fileURLToPath(new URL("../web/dist/", import.meta.url));
 const EXT_DIR = fileURLToPath(new URL("../extensions/", import.meta.url));
@@ -95,10 +96,10 @@ const server = http.createServer(async (req, res) => {
 
   if (url.pathname === "/api/state") {
     res.writeHead(200, { "Content-Type": "application/json" });
-    return res.end(JSON.stringify({ provider: client.provider, live: client.isLive, calls: client.calls }));
+    return res.end(JSON.stringify({ provider: client.provider, live: client.isLive, calls: client.calls, ...harnessState() }));
   }
 
-  // Agent sessions: one pi process per run, driven over RPC.
+  // Agent sessions: one coding agent per run, in the harness the request, JEV_AGENT, or PATH picks.
   if (url.pathname === "/api/agent/start" && req.method === "POST") {
     let body;
     try { body = await readJson(req); } catch { res.writeHead(400); return res.end("{}"); }
@@ -108,13 +109,20 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(404, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ error: "not an agent level or unknown option" }));
     }
+    let harness;
+    try {
+      harness = chooseHarness(typeof body.harness === "string" ? body.harness : "");
+    } catch (err) {
+      res.writeHead(err instanceof HarnessError ? 409 : 500, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ error: String(err?.message ?? err) }));
+    }
     const session = agents.start({
       level: Number(body.level), option: option.key,
       extension: join(EXT_DIR, option.extension), tools: option.tools, cwd: SANDBOX,
-      config: body.config ?? {},
+      config: body.config ?? {}, harness,
     });
     res.writeHead(200, { "Content-Type": "application/json" });
-    return res.end(JSON.stringify({ id: session.id, model: session.model }));
+    return res.end(JSON.stringify({ id: session.id, model: session.model, harness: session.harness }));
   }
   const agentMatch = url.pathname.match(/^\/api\/agent\/([a-z0-9]+)(?:\/(events|prompt|abort))?$/);
   if (agentMatch) {
@@ -206,6 +214,12 @@ const server = http.createServer(async (req, res) => {
   res.end("No build found. Run `npm run web` (builds web/dist, then starts this server).");
 });
 
-server.listen(PORT, "127.0.0.1", () => {
-  console.log(`10 Levels of Jev lab → http://127.0.0.1:${PORT} (backend: ${client.provider})`);
-});
+export { server };
+
+// Listen when run as the lab; tests import the server and listen on a port of their own.
+if (process.argv[1] && resolve(fileURLToPath(import.meta.url)).toLowerCase() === resolve(process.argv[1]).toLowerCase()) {
+  server.listen(PORT, "127.0.0.1", () => {
+    const { harness } = harnessState();
+    console.log(`10 Levels of Jev lab → http://127.0.0.1:${PORT} (backend: ${client.provider}, agent: ${harness ?? "none installed"})`);
+  });
+}

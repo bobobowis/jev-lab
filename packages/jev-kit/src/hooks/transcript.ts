@@ -30,13 +30,18 @@ export function claudeUsage(transcriptPath: string, window: number | null = null
   return null;
 }
 
-export function codexUsage(transcriptPath: string, window: number | null = null): Usage | null {
+/** Codex's last context reading: input tokens of the last model call, and the model's window. */
+export function codexTokenCount(transcriptPath: string): { tokens: number; window: number | null } | null {
   const all = lines(transcriptPath) as any[];
   for (let i = all.length - 1; i >= 0; i--) {
     const p = all[i]?.payload;
     if (all[i]?.type !== "event_msg" || p?.type !== "token_count" || !p.info?.last_token_usage) continue;
-    const tokens = p.info.last_token_usage.input_tokens ?? 0;
-    return { tokens, pct: pctOf(tokens, window ?? p.info.model_context_window ?? null) };
+    return { tokens: p.info.last_token_usage.input_tokens ?? 0, window: p.info.model_context_window ?? null };
   }
   return null;
+}
+
+export function codexUsage(transcriptPath: string, window: number | null = null): Usage | null {
+  const c = codexTokenCount(transcriptPath);
+  return c ? { tokens: c.tokens, pct: pctOf(c.tokens, window ?? c.window) } : null;
 }
