@@ -31,7 +31,10 @@ const alive = (pid: number) => { try { process.kill(pid, 0); return true; } catc
 
 test("resolveCommand finds the CLI on PATH (with PATHEXT on Windows), and null when missing", () => {
   const { dir, env } = fakeCli();
-  assert.equal(resolveCommand("fake-agent", env), join(dir, isWin ? "fake-agent.cmd" : "fake-agent"));
+  const found = resolveCommand("fake-agent", env);
+  // Windows paths are case-insensitive, and PATHEXT lists .CMD in capitals.
+  if (isWin) assert.equal(found.toLowerCase(), join(dir, "fake-agent.cmd").toLowerCase());
+  else assert.equal(found, join(dir, "fake-agent"));
   assert.equal(resolveCommand("no-such-agent-xyz", env), null);
   assert.throws(() => spawnCli("no-such-agent-xyz", [], { env }), /no-such-agent-xyz is not installed or not on PATH/);
 });

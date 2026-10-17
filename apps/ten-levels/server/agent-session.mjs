@@ -119,6 +119,8 @@ class AgentSession {
 
   /** A driver reports its process ended. */
   ended(code) {
+    this.exited = true;
+    if (this.removeOnExit) this.removeCopy();
     if (this.closed) return;
     this.closed = true;
     this.streaming = false;
@@ -177,9 +179,13 @@ class AgentSession {
     this.closed = true;
     try { this.driver.close(); } catch { /* already gone */ }
     this.tail.stop();
-    // Removed whether the agent was still running or had already exited on its own.
-    setTimeout(() => {
-      try { rmSync(this.cwd, { recursive: true, force: true }); } catch { /* best effort */ }
-    }, 2500).unref?.();
+    // The copy goes once the agent has let go of its files: now if it already exited, else on exit.
+    if (this.exited) return this.removeCopy();
+    this.removeOnExit = true;
+    setTimeout(() => this.removeCopy(), 2500).unref?.();
+  }
+
+  removeCopy() {
+    try { rmSync(this.cwd, { recursive: true, force: true }); } catch { /* best effort; Windows may still hold a file */ }
   }
 }
