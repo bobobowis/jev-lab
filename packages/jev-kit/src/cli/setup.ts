@@ -3,6 +3,7 @@
  */
 import { parseArgs } from "node:util";
 import { relative } from "node:path";
+import { toPosix } from "../files/read-state.ts";
 import { apply, describeSelection, plan, SetupError, type SetupHarness } from "../setup/index.ts";
 import type { Guard } from "../hooks/handle.ts";
 import { list, type Io } from "./common.ts";
@@ -58,11 +59,11 @@ export async function setup(argv: string[], io: Io): Promise<number> {
     });
     const changed = changes.filter((c) => c.changed);
     if (values["dry-run"]) {
-      for (const c of changes) io.stdout.write(`--- ${relative(dir, c.path) || c.path}${c.changed ? "" : " (unchanged)"}\n${c.after}`);
+      for (const c of changes) io.stdout.write(`--- ${toPosix(relative(dir, c.path) || c.path)}${c.changed ? "" : " (unchanged)"}\n${c.after}`);
       return 0;
     }
     apply(changes);
-    io.stdout.write(changed.length ? `jev setup: wrote ${changed.map((c) => relative(dir, c.path)).join(", ")}\n` : "jev setup: no changes\n");
+    io.stdout.write(changed.length ? `jev setup: wrote ${changed.map((c) => toPosix(relative(dir, c.path))).join(", ")}\n` : "jev setup: no changes\n");
     io.stdout.write(`jev setup: on: ${describeSelection(selection)}. Running it again replaces this selection.\n`);
     return 0;
   } catch (err: any) {

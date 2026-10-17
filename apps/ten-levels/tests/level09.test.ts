@@ -58,7 +58,8 @@ test("L9 B: harness and Jev state directories are skipped, results use forward s
   // `**/*` never matches dot entries, so nothing under them reaches Jev.
   assert.deepEqual((await l9.pruneFiles(await l9.expandPatterns(["**/*"], dir, true), dir)).files, ["src/deep/a.ts"]);
   // Named explicitly, or through a glob that reaches into them, they are reported as skipped.
-  const expanded = await l9.expandPatterns(["src", ".claude/settings.json", "**/.codex/*", ".jev"], dir, true);
+  // `.codex/*`, not `**/.codex/*`: Node 22's fs.glob does not match dot directories under `**`.
+  const expanded = await l9.expandPatterns(["src", ".claude/settings.json", ".codex/*", ".jev"], dir, true);
   const { files, skipped } = await l9.pruneFiles(expanded, dir);
   assert.deepEqual(files, ["src/deep/a.ts"]);
   const reasons = Object.fromEntries(skipped.map((s) => [s.path, s.reason]));
