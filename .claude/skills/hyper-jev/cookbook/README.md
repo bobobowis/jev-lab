@@ -9,6 +9,7 @@ Start with the decision you need. The reusable structure is transport, typed que
 | [Question design](03-question-design.md) | Rubrics, uncertainty, batching, deterministic policy |
 | [Client operations](04-client-operations.md) | One-time provider selection, retries, raw payloads, costs |
 | [Production checks](05-production.md) | Deploy safely, calibrate, observe, and test failure behavior |
+| [The jev command, hooks, and MCP](06-command-hooks-mcp.md) | Decisions in scripts, CI, git hooks, and coding agents without writing a module |
 | [Use cases](use-cases/README.md) | Thirty concrete examples across ten patterns |
 
 ## Three layers

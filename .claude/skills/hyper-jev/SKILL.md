@@ -1,6 +1,6 @@
 ---
 name: hyper-jev
-description: Integrate and use Jev, TypeSafe AI's System One decision model, in production codebases. Use for hyper-jev, Jev setup or deployment, TypeSafe/OpenRouter decision APIs, noul/choice/score questions, classifiers, routing, confidence gates, guardrails, dynamic options, retries, cost tracking, and raw payload retention. Includes a portable TypeScript client, tested examples, and a Jev cookbook. Not a presentation or UI-generation skill.
+description: Integrate and use Jev, TypeSafe AI's System One decision model, in production codebases. Use for hyper-jev, Jev setup or deployment, TypeSafe/OpenRouter decision APIs, noul/choice/score questions, classifiers, routing, confidence gates, guardrails, dynamic options, retries, cost tracking, raw payload retention, and the jev command, agent hooks, and MCP tools for scripts, CI, and coding agents. Includes a portable TypeScript client, tested examples, and a Jev cookbook. Not a presentation or UI-generation skill.
 argument-hint: request prompt
 ---
 
@@ -23,13 +23,14 @@ This skill packages the Jev core and thirty examples from the ten-levels codebas
 - Preserve the complete client result through the service boundary. Business decisions are derived views, not replacements for the raw request, raw response, usage, model ID, and metadata.
 - Keep each use case's questions, thresholds, and pure policy function together. Ask independent questions in one call. Make another request only when its state or choices depend on the preceding answer.
 - Use Jev for bounded judgments, not arithmetic, date comparisons, unrestricted text generation, or authorization. Security gates are an additional signal, never the only control.
+- When the decision belongs in a script, CI step, git hook, or a coding agent's hooks or tools rather than in the user's code, use the `jev` command, `jev setup`, and `jev mcp` from `@bobobowis/jev-kit` instead of writing a module. See [the jev command, hooks, and MCP](cookbook/06-command-hooks-mcp.md).
 - Copy only the runtime core and requested use cases into an existing app. The thirty-example starter is a reference, not a requirement to add every example.
 - Keep changes at the requested scope. Do not deploy infrastructure, make paid calls, modify unrelated modules, or commit unless requested.
 
 ## Workflow
 
 1. **Identify the decision.** State the input, allowed outcomes, uncertainty path, and any side effects. Choose Noul for a yes/no probability, Choice for a finite label, or Score for an ordered rubric.
-2. **Read the relevant cookbook.** Start with [the index](cookbook/README.md). Read [structure and setup](cookbook/01-structure-and-setup.md), [input/output](cookbook/02-input-output.md), and [client operations](cookbook/04-client-operations.md) for a new integration. Use [question design](cookbook/03-question-design.md), [production checks](cookbook/05-production.md), and only the needed [use-case guides](cookbook/use-cases/README.md).
+2. **Read the relevant cookbook.** Start with [the index](cookbook/README.md). Read [structure and setup](cookbook/01-structure-and-setup.md), [input/output](cookbook/02-input-output.md), and [client operations](cookbook/04-client-operations.md) for a new integration. Use [question design](cookbook/03-question-design.md), [production checks](cookbook/05-production.md), [the jev command, hooks, and MCP](cookbook/06-command-hooks-mcp.md) for scripts and agents, and only the needed [use-case guides](cookbook/use-cases/README.md).
 3. **Place the code.** For a new service, copy [the standalone starter](templates/starter/README.md) into a new directory. In an existing app, adapt `src/core/` to its backend integration folder and add a named decision module. Preserve the client's provider, retry, contract, raw-payload, and cost behavior.
 4. **Initialize once.** Load environment configuration before construction. Create one shared client per process or dependency-injection scope. Verify the selected provider name, not the key. Use an explicit mock only in development and tests. Construct a new client to rotate a key.
 5. **Define the contract.** Minimize state. Describe each criterion as an observable situation. Give open-ended choices an `other` outcome. Keep option IDs stable and map them to allowed code paths. Validate untrusted requests before sending.
@@ -50,6 +51,10 @@ Read the input/output and question-design guides. Show one concrete payload and 
 **`/hyper-jev gate agent tool calls and track their cost`**
 
 Use the guardrails guide. Combine deterministic tool permissions with a risk classification and review path. Keep all probabilities and wire bodies. Separate reported charges, estimates, and unknown cost.
+
+**`/hyper-jev block force pushes from Claude Code in this repo`**
+
+Read the command, hooks, and MCP guide. Run `jev setup --harness claude --guards bash --dry-run`, show the diff, apply it when the user agrees, and confirm a force push is denied in a session. No module needed.
 
 **`/hyper-jev classify documents across 2,000 categories`**
 

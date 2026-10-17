@@ -4,7 +4,7 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -147,4 +147,14 @@ test("no key and no --mock: an error naming the variables, no decision, no mock"
   const ask = spawnSync(process.execPath, [BIN, "ask", "--questions", Q, "--state", "help"], { env, encoding: "utf8" });
   assert.equal(ask.status, 1);
   assert.match(ask.stderr, /TYPESAFE_API_KEY or OPENROUTER_API_KEY/);
+});
+
+test("a reader that closes stdout early ends the output quietly, with no EPIPE trace", async () => {
+  const child = spawn(process.execPath, [BIN, "ask", "--questions", Q, "--state", "help", "--mock"], { stdio: ["ignore", "pipe", "pipe"] });
+  child.stdout.destroy();
+  let stderr = "";
+  child.stderr.on("data", (d) => { stderr += d; });
+  const code = await new Promise((resolve) => child.on("close", resolve));
+  assert.doesNotMatch(stderr, /EPIPE|Unhandled/);
+  assert.equal(code, 0);
 });
