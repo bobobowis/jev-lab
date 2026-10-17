@@ -5,7 +5,7 @@
  * Prints every request, typed answer, latency, and decision.
  *
  * Live through TypeSafe first, otherwise OpenRouter, based on keys; JEV_BACKEND=mock
- * forces the offline mock. `just jev4` and `just jev4b` wrap this.
+ * forces the offline mock. `npm run level -- 4` and `npm run level -- 4 b` wrap this.
  */
 // The demo opts into mock only when no live credentials exist. Otherwise the
 // shared client chooses TypeSafe first, then OpenRouter, once on construction.

@@ -11,6 +11,7 @@
  *   POST /api/agent/:id/prompt body { message }
  *   POST /api/agent/:id/abort
  *   DELETE /api/agent/:id
+ *   POST /api/shutdown        from 127.0.0.1 with x-jev-lab: shutdown; closes sessions and exits, so a new lab can take the port
  *   GET  /*                   the built Vue app in ../web/dist (SPA fallback to index.html)
  *
  * Live by default when a TypeSafe or OpenRouter key is set; JEV_BACKEND=mock forces offline.
@@ -28,6 +29,7 @@ import { extname, join, normalize } from "node:path";
 import { sharedJev } from "../src/core/client.ts";
 import { SCENARIOS } from "./scenarios.mjs";
 import * as agents from "./agent-session.mjs";
+import { shutdownRefusal } from "./shutdown.mjs";
 
 const DIST = fileURLToPath(new URL("../web/dist/", import.meta.url));
 const EXT_DIR = fileURLToPath(new URL("../extensions/", import.meta.url));
@@ -78,6 +80,18 @@ async function runOption(level, option, input, res) {
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
+
+  if (url.pathname === "/api/shutdown") {
+    const refused = shutdownRefusal(req);
+    res.writeHead(refused ? 403 : 200, { "Content-Type": "application/json" });
+    if (refused) return res.end(JSON.stringify({ error: refused }));
+    res.end(JSON.stringify({ lab: true, stopping: true }));
+    agents.closeAll();
+    server.close();
+    server.closeAllConnections?.();
+    setTimeout(() => process.exit(0), 200).unref();
+    return;
+  }
 
   if (url.pathname === "/api/state") {
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -189,7 +203,7 @@ const server = http.createServer(async (req, res) => {
     } catch { /* next candidate */ }
   }
   res.writeHead(503, { "Content-Type": "text/plain; charset=utf-8" });
-  res.end("No build found. Run `just web` (builds web/dist, then starts this server).");
+  res.end("No build found. Run `npm run web` (builds web/dist, then starts this server).");
 });
 
 server.listen(PORT, "127.0.0.1", () => {

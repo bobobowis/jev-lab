@@ -1,18 +1,25 @@
 {
   "name": "ten-levels-of-jev",
   "version": "1.0.0",
-  "description": "10 Levels of Jev \u2014 concrete use cases for TypeSafe's System One model, from a single smart if-statement to an agent that dynamically authors choice blocks.",
+  "description": "10 Levels of Jev — concrete use cases for TypeSafe's System One model, from a single smart if-statement to an agent that dynamically authors choice blocks.",
   "type": "module",
   "private": true,
   "engines": {
-    "node": ">=22"
+    "node": ">=22.18"
   },
   "scripts": {
-    "demo": "JEV_BACKEND=mock node src/demo.ts",
-    "demo:live": "node src/demo.ts",
-    "web": "node server/server.mjs",
-    "test": "node --test \"tests/**/*.test.ts\"",
-    "test:live": "JEV_LIVE=1 JEV_BACKEND=openrouter node --test \"tests/live.test.ts\"",
-    "web:build": "cd web && bun run build"
+    "demo": "node ../../scripts/run.mjs demo",
+    "demo:live": "node ../../scripts/run.mjs demo-live",
+    "web": "node ../../scripts/run.mjs web",
+    "dev": "node ../../scripts/run.mjs dev",
+    "test": "node ../../scripts/run.mjs test",
+    "test:live": "node ../../scripts/run.mjs test-live",
+    "lint": "node ../../scripts/run.mjs lint",
+    "heroes": "node ../../scripts/run.mjs heroes",
+    "mcp": "node ../../scripts/run.mjs mcp",
+    "level": "node ../../scripts/run.mjs level"
+  },
+  "dependencies": {
+    "@bobobowis/jev-kit": "0.1.0"
   }
 }

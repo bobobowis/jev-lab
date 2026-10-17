@@ -78,10 +78,43 @@ declared option and sum to ~1, choices are declared options). A direct TypeSafe 
 ## Where things live
 
 ```
-src/core/     types.ts (wire contract + validation), client.ts, mock.ts, helpers.ts (noul/choice/score)
-src/levels/   level01/ .. level10/ — one file per option (A, B, C), questions and thresholds in that file
+src/core/     re-exports the core from @bobobowis/jev-kit (packages/jev-kit/src/core)
+src/levels/   level01/ .. level10/ — one file per option (A, B, C), questions and thresholds in that file;
+              levels 6 to 10 re-export their decision code from the package's guards, compact, and files
 src/demo.ts   runs all 10 levels
 tests/        core.test.ts + one test file per level
+```
+
+## Use the Jev tools in any MCP client
+
+The Level 7 to 10 tools are also an MCP server, `jev mcp` from `@bobobowis/jev-kit`, so any agent
+that speaks MCP can use them. From this directory, after `npm install` at the repo root:
+
+```bash
+npm run mcp -- --level 8 --cwd sandbox          # ask_jev_file_bool, _choice, _score over stdio
+npm run mcp -- --tools ask_jev,ask_jev_files    # or name the tools
+```
+
+Paths resolve against `--cwd`, or the directory the client starts the server in, and may not leave
+it. The server reads `TYPESAFE_API_KEY` or `OPENROUTER_API_KEY` from its environment.
+
+**Claude Code.** Add it to a project's `.mcp.json`, or let `jev setup --harness claude --tools ...` do it:
+
+```json
+{ "mcpServers": { "jev": { "command": "node", "args": ["<repo>/packages/jev-kit/dist/cli/index.js", "mcp", "--level", "8"] } } }
+```
+
+Or once, from the project: `claude mcp add jev -- node <repo>/packages/jev-kit/dist/cli/index.js mcp --level 8`.
+The tools show up as `mcp__jev__ask_jev_file_bool` and so on.
+
+**Codex.** In `~/.codex/config.toml`, or a trusted project's `.codex/config.toml`:
+
+```toml
+[mcp_servers.jev]
+command = "node"
+args = ["<repo>/packages/jev-kit/dist/cli/index.js", "mcp", "--level", "8"]
+default_tools_approval_mode = "approve"   # without it, calls fail under approval_policy = "never"
+env_vars = ["TYPESAFE_API_KEY", "OPENROUTER_API_KEY"]   # Codex starts MCP servers without your environment
 ```
 
 ## The rules this codebase follows (from the TypeSafe docs and field reports)

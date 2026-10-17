@@ -1,0 +1,128 @@
+# @bobobowis/jev-kit
+
+Jev, TypeSafe AI's System One decision model, as a typed client, guards, file reads, agent tools,
+hooks, an MCP server, and a CLI. Zero runtime dependencies. Node 22.18 or later.
+
+Jev answers typed questions about a state (yes or no, pick one of your options, a position on your
+scale) in about 300 ms for a fraction of a cent. This package is the reusable part of
+[10 Levels of Jev](../../README.md): the client and the decisions the lab teaches, packaged so a
+project or a coding agent can use them directly.
+
+## Keys
+
+Everything reads `TYPESAFE_API_KEY`, or else `OPENROUTER_API_KEY`, from the environment. Without one,
+calls fail with an error; nothing quietly falls back to the mock. `--mock` (CLI) or
+`new JevClient({ provider: "mock" })` selects the offline mock explicitly. The mock is a
+deterministic stand-in for tests and wiring, not a model: its answers are not judgments.
+
+## Use the Jev tools in any MCP client
+
+`jev mcp` serves the agent tools over stdio MCP:
+
+| Tool | What it answers |
+|---|---|
+| `should_i_compact` | whether now is a good moment to compact (needs the Level 7 hooks' notes) |
+| `ask_jev_file_bool`, `_choice`, `_score` | a yes or no, a pick, or a score about one file the agent never loads |
+| `ask_jev_files`, `pick_first_file` | the same questions over many files in parallel, then which to open first |
+| `ask_jev` | any question block over the agent's own state, file paths, and a command's output |
+
+```bash
+jev mcp --level 8                    # the lab's levels 7 to 10
+jev mcp --tools ask_jev,ask_jev_files
+```
+
+Claude Code, in `.mcp.json`:
+
+```json
+{ "mcpServers": { "jev": { "command": "jev", "args": ["mcp", "--tools", "ask_jev"] } } }
+```
+
+Codex, in `~/.codex/config.toml` or a trusted project's `.codex/config.toml`:
+
+```toml
+[mcp_servers.jev]
+command = "jev"
+args = ["mcp", "--tools", "ask_jev"]
+default_tools_approval_mode = "approve"
+env_vars = ["TYPESAFE_API_KEY", "OPENROUTER_API_KEY"]   # Codex starts MCP servers without your environment
+```
+
+Or let `jev setup` write either one, see below.
+
+## Hooks: guards and the compaction advisor
+
+`jev hook` runs as a Claude Code or Codex hook. It reads the hook payload on stdin and answers in the
+harness's own format.
+
+- **Guards.** `PreToolUse` runs the bash gate on shell commands and the write gate on file writes
+  (`Write`, `Edit`, `MultiEdit`, `NotebookEdit`, Codex's `apply_patch`). A block denies the call.
+  `PostToolUse` screens `Read` and `Bash` output for instructions aimed at the agent and attaches a
+  banner.
+- **Compaction advisor.** `UserPromptSubmit` and `Stop` ask four questions after each turn and, when
+  the work has moved on and context is high, tell the agent on the next prompt to ask you to run
+  `/compact`.
+
+Hooks fail open: a missing key, a Jev error, or a timeout (8 s by default) allows the action and
+reports an error. They never exit 2, which both harnesses read as "block".
+
+## jev setup
+
+Writes or merges the MCP entry and the hooks into a project's agent config, and leaves everything
+else alone:
+
+```bash
+jev setup --harness claude --guards bash,write,result --tools ask_jev    # .claude/settings.json, .mcp.json
+jev setup --harness codex  --guards bash,write --compact                  # a marked block in .codex/config.toml
+jev setup --harness claude --level 6 --dry-run                            # print, write nothing
+```
+
+Each run sets the whole selection and replaces only what an earlier run wrote. A settings file that
+is not valid JSON is refused, never overwritten. Codex asks you to trust the project and its hooks
+the first time.
+
+## The CLI in scripts, CI, and git hooks
+
+Results go to stdout, diagnostics to stderr, so stdout pipes straight into `jq`.
+
+```bash
+# A question block about files and a command's output
+jev ask --questions '{"risky":{"type":"score","instructions":"How risky is `output`?","criteria":["Docs only","Some callers","Auth or billing, no tests"]}}' \
+        --command "git diff main" | jq .answers.risky.score
+
+# The same questions once per file, in parallel
+jev files "src/**/*.ts" --questions @questions.json | jq '.results[] | {path, answers}'
+
+# The smart if: the exit code is the answer
+jev gate "Is this ticket about billing?" --state "$(cat ticket.txt)" && route billing
+
+# The Level 6 gates on a command or a file write
+jev guard bash "git push --force origin main"      # block: irreversible (1.00) ...   exit 1
+```
+
+| Command | Exit codes |
+|---|---|
+| `ask`, `files` | 0 answered, 1 refused or failed (the reason is on stderr), 2 bad options |
+| `gate` | 0 yes (at or above `--threshold`, default 0.5), 1 no, 2 bad options or a state that cannot be sent, 3 Jev could not answer |
+| `guard` | 0 allow, 1 block, 2 bad options, 3 Jev could not answer |
+
+`gate` and `guard` exit 3 instead of guessing when Jev cannot answer, so the script decides whether
+that fails open or closed. A pre-commit hook that blocks commits adding a live credential, and lets
+commits through when Jev is unreachable:
+
+```sh
+#!/bin/sh
+# .git/hooks/pre-commit
+jev gate "Does output add a real credential (an API key, token, password, or private key with a real-looking value), not a placeholder?" \
+  --command "git diff --cached" --threshold 0.7
+case $? in
+  0) echo "pre-commit: this commit seems to add a credential; remove it or commit with --no-verify." >&2; exit 1 ;;
+  3) echo "pre-commit: Jev unavailable, not checked." >&2 ;;
+esac
+exit 0
+```
+
+## Events
+
+Every Jev call and hook decision is reported as one JSON line: to `$JEV_EVENT_DIR/<harness>-<pid>.jsonl`
+when that is set, otherwise to stderr prefixed `JEV_EVENT `. The lab uses this to show hooks and
+tool calls live.

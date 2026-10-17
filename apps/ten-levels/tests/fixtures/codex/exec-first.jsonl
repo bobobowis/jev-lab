@@ -1,0 +1,16 @@
+{"type":"thread.started","thread_id":"01a14ad3-3608-7ac2-a573-e28a3ea80660"}
+{"type":"item.completed","item":{"id":"item_0","type":"error","message":"`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."}}
+{"type":"item.completed","item":{"id":"item_1","type":"error","message":"`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."}}
+{"type":"item.completed","item":{"id":"item_2","type":"error","message":"clamping SessionEnd hook timeout to 3s in /<session-flags>/config.toml"}}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_3","type":"agent_message","text":"I’ll perform the five steps in order, then report any feedback and whether `echo forbidden` ran."}}
+{"type":"item.started","item":{"id":"item_4","type":"command_execution","command":"/bin/bash -lc ls","aggregated_output":"","exit_code":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_4","type":"command_execution","command":"/bin/bash -lc ls","aggregated_output":"math.ts\n","exit_code":0,"status":"completed"}}
+{"type":"item.started","item":{"id":"item_5","type":"command_execution","command":"/bin/bash -lc 'cat math.ts'","aggregated_output":"","exit_code":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_5","type":"command_execution","command":"/bin/bash -lc 'cat math.ts'","aggregated_output":"export const add = (a: number, b: number) => a + b;\n","exit_code":0,"status":"completed"}}
+{"type":"item.started","item":{"id":"item_6","type":"mcp_tool_call","server":"fixture","tool":"echo","arguments":{"text":"hi"},"result":null,"error":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_6","type":"mcp_tool_call","server":"fixture","tool":"echo","arguments":{"text":"hi"},"result":{"content":[{"type":"text","text":"echo: hi"}],"structured_content":null},"error":null,"status":"completed"}}
+{"type":"item.started","item":{"id":"item_7","type":"file_change","changes":[{"path":"/work/notes.txt","kind":"add"}],"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_7","type":"file_change","changes":[{"path":"/work/notes.txt","kind":"add"}],"status":"completed"}}
+{"type":"item.completed","item":{"id":"item_8","type":"agent_message","text":"Completed all five steps in order. Created `notes.txt` containing `done`. `echo forbidden` did **not** run.\n\nFeedback and additional context received, verbatim:\n\n```text\nFIXTURE-PROMPT-NOTE-42\nFIXTURE-BANNER-Bash\nCommand blocked by PreToolUse hook: jev-guard blocked this command: FIXTURE-DENY-REASON. Command: echo forbidden\nFIXTURE-BANNER-Bash\nFIXTURE-BANNER-mcp__fixture__echo\nFIXTURE-BANNER-apply_patch\n```"}}
+{"type":"turn.completed","usage":{"input_tokens":90119,"cached_input_tokens":86144,"cache_write_input_tokens":0,"output_tokens":310,"reasoning_output_tokens":0}}

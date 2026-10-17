@@ -46,6 +46,11 @@ export function agentEnv(model, config) {
 
 const sessions = new Map();
 
+/** Close every session, for a lab that is shutting down. */
+export function closeAll() {
+  for (const s of [...sessions.values()]) s.close();
+}
+
 export function getSession(id) {
   return sessions.get(id);
 }

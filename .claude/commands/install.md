@@ -6,7 +6,7 @@ description: Install 10 Levels of Jev — prerequisites, the web dependencies, t
 
 ## Purpose
 
-Set up the 10 Levels of Jev lab for development. Checks the toolchain (Node 24, bun, just, pi), installs the Vue lab's dependencies, confirms the Jev credential without displaying it, verifies the sandbox and the pi settings the agentic levels depend on, and runs the offline suite. This is an interactive, agentic process — ask the user when choices are needed.
+Set up the 10 Levels of Jev lab for development. Checks the toolchain (Node 22.18+, bun, pi), installs the workspace and the Vue lab's dependencies, confirms the Jev credential without displaying it, verifies the sandbox and the pi settings the agentic levels depend on, and runs the offline suite. This is an interactive, agentic process — ask the user when choices are needed.
 
 ## Variables
 
@@ -15,7 +15,7 @@ APP_DIR: `apps/ten-levels`
 WEB_DIR: `apps/ten-levels/web`
 SANDBOX_DIR: `apps/ten-levels/sandbox`
 EXTENSIONS_DIR: `apps/ten-levels/extensions`
-ENV_FILE: `.env` at the repo root (loaded by the justfile)
+ENV_FILE: `.env` at the repo root (loaded by `scripts/run.mjs`)
 ENV_SAMPLE: `.env.sample`
 
 ## Codebase Structure
@@ -29,7 +29,7 @@ apps/ten-levels/
 ├── server/            # the API and the pi session manager, node:http only
 ├── web/               # the Vue lab; bun installs its dependencies
 └── tests/             # 201 offline tests on the mock, 10 live tests
-justfile               # every recipe; loads .env
+package.json           # every recipe as an npm script over scripts/run.mjs; loads .env
 ```
 
 ## Instructions
@@ -39,18 +39,18 @@ justfile               # every recipe; loads .env
 - For auto-installable items (the web dependencies), install without asking.
 - For items requiring user input (the API key), ask the user with sensible defaults.
 - Do NOT read or display API key values — only confirm they are set.
-- Never start `just web` or `just dev` from this command; only verify readiness.
-- The app itself has zero runtime dependencies. Only `web/` needs an install.
+- Never start `npm run web` or `npm run dev` from this command; only verify readiness.
+- The app itself has zero runtime dependencies. `npm install` at the root links the workspace and builds `packages/jev-kit`; `web/` needs `bun install`.
 - Levels 1 to 5 work offline on the mock. Levels 6 to 10 need both `pi` and an OpenRouter key; if either is missing, say so and continue, the rest of the lab still works.
 
 ## Workflow
 
 ### Step 1 — Check Prerequisites
 
-Gate on the first two; stop and guide the user if either is missing.
+Gate on the first one; stop and guide the user if it is missing.
 
-1. **Node 24**: `command -v node && node --version`. The levels run as TypeScript natively, which needs Node 22 or later, and 24 is what the repo is tested on. Missing or older: install from https://nodejs.org or `nvm install 24`.
-2. **just**: `command -v just`. Missing: `brew install just` or https://github.com/casey/just#installation.
+1. **Node 22.18 or later**: `command -v node && node --version`. The levels run as TypeScript natively, which needs Node 22.18 or later, and 24 is recommended. Missing or older: install from https://nodejs.org or `nvm install 24`.
+2. **npm**: `npm --version`. It ships with Node and runs every recipe.
 
 Then the standard tools:
 
@@ -66,20 +66,20 @@ Then the standard tools:
 
 ### Step 3 — Install Dependencies
 
-9. Run `cd WEB_DIR && bun install`. This is the only install. Report the count of packages from bun's output.
+9. Run `npm install` at the repo root (links the workspace, builds `packages/jev-kit`), then `cd WEB_DIR && bun install`. Report the count of packages from bun's output.
 
 ### Step 4 — Verify Configuration
 
 10. `SANDBOX_DIR/.pi/settings.json` exists and contains `keepRecentTokens`. Without it Level 7's compaction never has material.
 11. `EXTENSIONS_DIR` contains six files: `report.ts`, `jev-guard.ts`, `jev-compact.ts`, `ask-jev-file.ts`, `ask-jev-files.ts`, `ask-jev.ts`. List any missing.
 12. `SANDBOX_DIR/src/domain/billing.ts` contains `Math.floor` on the prorate line. That is the failing test on purpose; if it reads `Math.round` someone fixed the pristine sandbox and levels 7, 9, and 10 lose their bug. Report it, do not change it.
-13. `apps/ten-levels/web/public/heroes/` contains ten `level-N.svg` files; if not, note that `just heroes` regenerates them.
+13. `apps/ten-levels/web/public/heroes/` contains ten `level-N.svg` files; if not, note that `npm run heroes` regenerates them.
 
 ### Step 5 — Verify Readiness
 
-14. Run `just test` from the repo root. Expect 201 passing, 0 failures, and 10 live tests skipped; report the pass count. This uses the mock and needs no key.
+14. Run `npm test` from the repo root. It runs the package's tests, then the lab's; expect 0 failures and 10 live tests skipped, and report the pass counts. This uses the mock and needs no key.
 15. Run `cd SANDBOX_DIR && npm test` and expect exactly one failure, the proration test. Report pass and fail counts.
-16. Confirm `just --list` shows `web`, `dev`, `jev1` through `jev10`, `test`, `test-live`, `demo`, `heroes`, `lint`. Do not run `web` or `dev`.
+16. Confirm `npm run` lists `web`, `dev`, `level`, `test`, `test:live`, `demo`, `heroes`, `lint`, `mcp`. Do not run `web` or `dev`.
 17. If pi is installed, run `pi --version` once more and confirm it prints 0.85.1 or later.
 
 ### Step 6 — Report
@@ -89,10 +89,10 @@ Show a status table with one row per check above, pass or fail, and one line per
 Next steps, as commands the user can paste:
 
 ```bash
-just web            # build and serve the lab on http://127.0.0.1:4399, opens the browser
-just jev1           # one level in the terminal, jev1 through jev10; add a, b, or c for one option (just jev4 b)
-just test-live      # 10 live tests against real Jev, needs OPENROUTER_API_KEY
-just demo           # every level, every option, on the mock
+npm run web            # build and serve the lab on http://127.0.0.1:4399, opens the browser
+npm run level -- 1     # one level in the terminal, 1 through 10; add a, b, or c for one option (npm run level -- 4 b)
+npm run test:live      # 10 live tests against real Jev, needs OPENROUTER_API_KEY
+npm run demo           # every level, every option, on the mock
 ```
 
 If pi or the key is missing, say which levels are unavailable and what to install to unlock them.

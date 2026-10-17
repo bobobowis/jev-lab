@@ -5,3 +5,6 @@ apps/ten-levels/web/dist/
 apps/ten-levels/.sessions/
 apps/ten-levels/.sandboxes/
 .playwright-cli/
+packages/jev-kit/dist/
+*.tsbuildinfo
+.jev/

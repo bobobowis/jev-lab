@@ -31,6 +31,14 @@ test("L8: missing, binary, and oversized files are refused with the path", async
   await assert.rejects(l8.readFileState("big.txt", dir), /too large/);
 });
 
+test("L8: a path outside the repo is refused before any Jev call", async () => {
+  let called = false;
+  const decide = async () => { called = true; return { answers: {} as any }; };
+  await assert.rejects(l8.askFileBool("../secret.txt", "Is it secret?", SANDBOX, {}, decide), /outside the repo: \.\.\/secret\.txt/);
+  await assert.rejects(l8.readFileState("/etc/hostname", SANDBOX), /outside the repo/);
+  assert.equal(called, false);
+});
+
 test("L8 A: the bool tool sends the file as content and returns a boolean plus the noul", async () => {
   const { calls, decide } = fake({ type: "noul", noul: 0.91 });
   const r = await l8.askFileBool("src/auth/session.ts", "Does `content` validate tokens?", SANDBOX, { yes: "It checks a token", no: "No token handling" }, decide);

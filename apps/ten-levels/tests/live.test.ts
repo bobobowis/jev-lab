@@ -1,7 +1,7 @@
 /**
  * 10 live tests — one per level, each fully operating against real Jev through
- * OpenRouter's decision endpoint. Gated: `npm run test:live` sets JEV_LIVE=1 +
- * JEV_BACKEND=openrouter and requires OPENROUTER_API_KEY.
+ * OpenRouter's decision endpoint. Gated: `npm run test:live` (scripts/run.mjs test-live) sets
+ * JEV_LIVE=1 and JEV_BACKEND=openrouter on the run, and it needs OPENROUTER_API_KEY.
  *
  * Offline (`npm test`) every test here skips and the mock suite covers the logic.
  */

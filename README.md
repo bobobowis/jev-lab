@@ -21,22 +21,21 @@ Strip away the launch hype and [Jev](https://typesafe.ai) is one thing: **intell
 
 ### Agentic Install
 
-```bash
-just install        # runs the /install slash command in Claude Code (or Pi, or your favorite agentic coding tool)
-```
+Open the repo in Claude Code (or Pi, or your favorite agentic coding tool) and run `/install`.
 
-The `/install` command lives at `.claude/commands/install.md`. It checks Node, bun, just, git, and pi, installs the lab's dependencies, confirms your key without printing it, verifies the sandbox, and runs the offline suite.
+The `/install` command lives at `.claude/commands/install.md`. It checks Node, bun, git, and pi, installs the lab's dependencies, confirms your key without printing it, verifies the sandbox, and runs the offline suite.
 
 ### Manual Install
 
-**Prereqs:** [Node 24](https://nodejs.org), [bun](https://bun.sh), [just](https://github.com/casey/just), [pi 0.85.1+](https://github.com/earendil-works/pi-mono) for levels 6 to 10, and an [OpenRouter key](https://openrouter.ai/keys) for live runs.
+**Prereqs:** [Node 22.18+](https://nodejs.org) (24 recommended), [bun](https://bun.sh), [pi 0.85.1+](https://github.com/earendil-works/pi-mono) for levels 6 to 10, and an [OpenRouter key](https://openrouter.ai/keys) for live runs.
 
 ```bash
-cd apps/ten-levels/web && bun install && cd ../../..   # the Vue lab's dependencies; the levels themselves have none
+npm install                                            # links the workspace and builds packages/jev-kit; no runtime dependencies
+cd apps/ten-levels/web && bun install && cd ../../..   # the Vue lab's dependencies
 cp .env.sample .env                                    # then set OPENROUTER_API_KEY (or export it in your shell)
 npm install -g @earendil-works/pi-coding-agent         # pi, for levels 6 to 10
-just test                                              # 201 offline tests on the deterministic mock
-just web                                               # build the lab and open it on http://127.0.0.1:4399
+npm test                                               # the offline tests on the deterministic mock
+npm run web                                            # build the lab and open it on http://127.0.0.1:4399
 ```
 
 No key? Levels 1 to 5 still run on the offline mock. Levels 6 to 10 need both pi and the key.
@@ -119,7 +118,7 @@ Every example below quotes a live run of the lab. Your numbers will move a littl
 
 ## Levels 1 to 5: Jev from code
 
-Each option is a plain async function. Run one level in the terminal with `just jev1` through `just jev5`, or one option with `just jev4 b`. The code lives in `apps/ten-levels/src/levels/level01/` through `level05/`.
+Each option is a plain async function. Run one level in the terminal with `npm run level -- 1` through `npm run level -- 5`, or one option with `npm run level -- 4 b`. The code lives in `apps/ten-levels/src/levels/level01/` through `level05/`.
 
 ### Level 1: Single Decisions
 
@@ -357,7 +356,7 @@ The landing page starts with every level hidden. Opening a level reveals its car
 ├── apps/ten-levels/
 │   ├── src/core/            # types.ts (wire contract, validation, limits), client.ts (mock, OpenRouter, TypeSafe), helpers.ts, mock.ts
 │   ├── src/levels/          # level01 .. level10, one file per option plus index.ts; 6 to 10 hold the decision code the extensions import
-│   ├── src/level.ts         # the terminal runner behind just jev1 .. jev10
+│   ├── src/level.ts         # the terminal runner behind npm run level -- 1 .. 10
 │   ├── src/demo.ts          # every level, every option, printed end to end
 │   ├── extensions/          # one pi extension per agentic level, plus report.ts, the side channel every extension reports on
 │   │   ├── jev-guard.ts     # L6: tool_call and tool_result hooks
@@ -380,17 +379,23 @@ The landing page starts with every level hidden. Opening a level reveals its car
 ## Commands
 
 ```bash
-just web          # build the Vue app, free port 4399, open the browser, serve the lab
-just dev          # Vite with hot reload on 5173; needs just web running for the API
-just jev1         # one level in the terminal, jev1 through jev10
-just jev4 b       # one option of one level, a, b, or c
-just demo         # every level, every option, on the mock
-just demo-live    # the same against real Jev
-just test         # 201 offline tests, deterministic mock
-just test-live    # 10 live tests, one per level
-just heroes       # re-render the ten hero SVGs
-just lint         # oxlint on the Vue app
-just install      # the /install walkthrough in Claude Code
+npm run web             # build the Vue app, replace a lab already on port 4399, open the browser, serve
+npm run dev             # Vite with hot reload on 5173; needs npm run web running for the API
+npm run level -- 1      # one level in the terminal, 1 through 10
+npm run level -- 4 b    # one option of one level, a, b, or c
+npm run demo            # every level, every option, on the mock
+npm run demo:live       # the same against real Jev
+npm test                # the offline tests, deterministic mock
+npm run test:live       # 10 live tests, one per level
+npm run mcp -- --level 8   # the Jev tools over stdio MCP
+npm run heroes          # re-render the ten hero SVGs
+npm run lint            # oxlint on the Vue app
+```
+
+Every command is the same on Windows, macOS, and Linux: each npm script calls `scripts/run.mjs`.
+For the agentic setup walkthrough, run `/install` in Claude Code.
+
+```bash
 ```
 
 ---
@@ -398,7 +403,7 @@ just install      # the /install walkthrough in Claude Code
 ## How to run it end to end
 
 ```bash
-just web                       # http://127.0.0.1:4399 opens
+npm run web                    # http://127.0.0.1:4399 opens
 # Level 1: pick a use case, step through Set A to Set E, Run live, watch the injection score fall from 0.99 to 0.01
 # Level 4: Run live on Set C, rm -rf node_modules && npm install comes back reversible at low confidence and asks a human
 # Level 6: press Go on Set A, watch rm -rf blocked while npm test runs
