@@ -26,16 +26,18 @@ const KIT = join(ROOT, "packages", "jev-kit");
 const ENV_FILE = `--env-file-if-exists=${join(ROOT, ".env")}`;
 const require = createRequire(join(KIT, "package.json"));
 
-/** Run one command, inheriting stdio. Resolves with its exit code. */
+/** Run one command, inheriting stdio. Resolves with its exit code; `.child` is the process. */
 function run(command, args, { cwd = ROOT, env = {} } = {}) {
-  return new Promise((resolve) => {
-    const child = spawn(command, args, { cwd, env: { ...process.env, ...env }, stdio: "inherit" });
+  let child;
+  const done = new Promise((resolve) => {
+    child = spawn(command, args, { cwd, env: { ...process.env, ...env }, stdio: "inherit" });
     child.on("error", (err) => {
       console.error(err.code === "ENOENT" ? `run: ${command} is not installed or not on PATH.` : `run: ${command}: ${err.message}`);
       resolve(127);
     });
     child.on("exit", (code, signal) => resolve(code ?? (signal ? 1 : 0)));
   });
+  return Object.assign(done, { child });
 }
 const node = (args, opts) => run(process.execPath, args, opts);
 const bun = (args) => run("bun", args, { cwd: WEB });
@@ -77,15 +79,15 @@ async function freePort() {
   return 1;
 }
 
-/** Start the server, open the browser once it answers, and run until it exits. */
+/** Start the server, open the browser once it answers (unless BROWSER=none), and run until it exits. */
 async function serveAndOpen() {
   const exited = node([ENV_FILE, "server/server.mjs"], { cwd: APP });
   let done = false;
   exited.then(() => { done = true; });
   for (let i = 0; i < 150 && !done; i++) {
     if (await reachable()) {
-      const { openUrl } = await import("./open-url.mjs");
-      await openUrl(LAB);
+      if (process.env.BROWSER === "none") console.log(`Lab on ${LAB}`);
+      else await (await import("./open-url.mjs")).openUrl(LAB);
       break;
     }
     await sleep(100);
@@ -103,12 +105,14 @@ const tasks = {
     () => node(["--test", "tests/**/*.test.ts"], { cwd: KIT }),
     () => node(["--test", "tests/**/*.test.ts"], { cwd: APP }),
   ),
-  "test-live": () => steps(build, () => node([ENV_FILE, "--test", "tests/live.test.ts"], { cwd: APP, env: { JEV_LIVE: "1", JEV_BACKEND: "openrouter" } })),
+  "test-live": () => steps(build, () => node([ENV_FILE, "--test", "tests/live.test.ts"], { cwd: APP, env: { JEV_LIVE: "1" } })),
   web: () => steps(build, () => bun(["run", "build"]), freePort, serveAndOpen),
   dev: async () => {
     const watch = tsc(["-b", "tsconfig.build.json", "--watch", "--preserveWatchOutput"]);
     const code = await bun(["run", "dev"]);
-    return code || watch;
+    watch.child.kill(); // Vite is gone, so the package watch has no one to build for
+    await watch;
+    return code;
   },
   lint: () => bun(["run", "lint"]),
   heroes: () => bun(["run", "heroes"]),

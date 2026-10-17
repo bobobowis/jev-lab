@@ -68,7 +68,7 @@
 
 - [x] 11.1 Write the root `AGENTS.md` (orientation, `npm install` at the root, setup per harness, which levels each unlocks, offline test run) and reduce `.claude/commands/install.md` and `prime.md` to pointers plus the Claude-specific checks. Verify by asking Codex to set up the repo from a clean clone and confirming it skips pi and runs the offline tests.
 - [x] 11.2 Write `packages/jev-kit/README.md` (install from the tarball or the workspace, the API by entry point, every `jev` subcommand with an example, the exit codes, `jev setup` for Claude Code and Codex). Add the `jev` command, hooks, and MCP section to the hyper-jev `SKILL.md` and cookbook. Verify that every command in the package README runs as written on the mock.
-- [ ] 11.3 Update the root `README.md` and `apps/ten-levels/README.md`: "pi, Claude Code, or Codex", the package and its command, the matrix, the per-harness credentials, Windows/macOS/Linux commands, and the Node version. Verify that every command in the READMEs runs as written on Linux and appears in the Windows CI.
+- [x] 11.3 Update the root `README.md` and `apps/ten-levels/README.md`: "pi, Claude Code, or Codex", the package and its command, the matrix, the per-harness credentials, Windows/macOS/Linux commands, and the Node version. Verify that every command in the READMEs runs as written on Linux and appears in the Windows CI.
 
 ## 12. Integration checks
 

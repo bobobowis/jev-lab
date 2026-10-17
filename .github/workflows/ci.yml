@@ -19,11 +19,29 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+      - uses: oven-sh/setup-bun@v2
       - run: npm install
       - run: npm test
       - run: npm run demo
       - name: one level through npm (PowerShell on Windows, bash elsewhere)
         run: npm run level -- 1 a
+      # The README's commands as written, each its own step: in PowerShell only a step's last exit code counts.
+      - run: bun install --cwd apps/ten-levels/web
+      - run: npm run lint
+      - run: npm run docs -- --check
+      - run: npm run level -- 4 b
+      - run: npm pack -w packages/jev-kit
+      - name: npm run web builds, serves the lab, and stops on request
+        shell: bash
+        env:
+          BROWSER: none
+          PORT: "4499"
+        run: |
+          npm run web > web.log 2>&1 &
+          for i in $(seq 1 180); do curl -sf http://127.0.0.1:4499/api/state > /dev/null && break; sleep 1; done
+          curl -sf http://127.0.0.1:4499/ | grep -q 'id="app"' || { cat web.log; exit 1; }
+          curl -sf -X POST -H 'x-jev-lab: shutdown' http://127.0.0.1:4499/api/shutdown
+          wait
       - name: jev mcp answers a handshake over stdio
         shell: bash
         run: |

@@ -1,7 +1,7 @@
 /**
- * 10 live tests — one per level, each fully operating against real Jev through
- * OpenRouter's decision endpoint. Gated: `npm run test:live` (scripts/run.mjs test-live) sets
- * JEV_LIVE=1 and JEV_BACKEND=openrouter on the run, and it needs OPENROUTER_API_KEY.
+ * 10 live tests — one per level, each fully operating against real Jev through TypeSafe or
+ * OpenRouter, whichever key is set (TYPESAFE_API_KEY first). Gated: `npm run test:live`
+ * (scripts/run.mjs test-live) sets JEV_LIVE=1, and fails when neither key is set.
  *
  * Offline (`npm test`) every test here skips and the mock suite covers the logic.
  */
@@ -22,7 +22,13 @@ import * as l9 from "../src/levels/level09/index.ts";
 import * as l10 from "../src/levels/level10/index.ts";
 import { fileURLToPath } from "node:url";
 
-const LIVE = process.env.JEV_LIVE === "1" && !!process.env.OPENROUTER_API_KEY;
+const KEY = !!(process.env.TYPESAFE_API_KEY || process.env.OPENROUTER_API_KEY);
+const LIVE = process.env.JEV_LIVE === "1" && KEY;
+
+// Asked for a live run with no key: one failure instead of ten silent skips.
+test("live run has a key", { skip: process.env.JEV_LIVE !== "1" }, () => {
+  assert.ok(KEY, "npm run test:live needs TYPESAFE_API_KEY or OPENROUTER_API_KEY, in the shell or the root .env");
+});
 
 test("L1 live: single decisions behave on the real model", { skip: !LIVE }, async () => {
   const urgent = await l1.urgentGate("Integration is down, we are losing sales every hour. Please help immediately.");
@@ -82,7 +88,7 @@ test("L6 live: the bash gate blocks a wipe and allows a listing", { skip: !LIVE 
 });
 
 test("L7 live: a gear switch reads as switched, the same work does not", { skip: !LIVE }, async () => {
-  const client = new JevClient({ provider: "openrouter" });
+  const client = new JevClient();
   const switched = await client.systemOne({
     current_request: "Now write a CONTRIBUTING.md for this repo.",
     previous_work: "Read the auth files and explained login. Ran the tests.",
