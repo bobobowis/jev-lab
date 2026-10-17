@@ -61,8 +61,8 @@
 
 ## 10. Capability matrix and lab UI
 
-- [ ] 10.1 Add the package's `src/capabilities.ts` with the D8 matrix (after 1.4), serve it in `/api/level/:n`, and generate the README matrix table from it (`node scripts/run.mjs docs`). Add a test that the README table matches the source. Verify with `npm test`.
-- [ ] 10.2 Update `AgentChat.vue`, `LiveExample.vue`, and `agent-api.ts`: a harness picker over the available ones, the harness and model in the footer, blank (not 0) for unknown cost or context, the degraded or unavailable note per option, and the Run button disabled for unavailable options. Verify with `npm run lint` and by checking Level 7 under Claude in the browser.
+- [x] 10.1 Add the package's `src/capabilities.ts` with the D8 matrix (after 1.4), serve it in `/api/level/:n`, and generate the README matrix table from it (`node scripts/run.mjs docs`). Add a test that the README table matches the source. Verify with `npm test`.
+- [x] 10.2 Update `AgentChat.vue`, `LiveExample.vue`, and `agent-api.ts`: a harness picker over the available ones, the harness and model in the footer, blank (not 0) for unknown cost or context, the degraded or unavailable note per option, and the Run button disabled for unavailable options. Verify with `npm run lint` and by checking Level 7 under Claude in the browser.
 
 ## 11. Agent instructions and docs
 

@@ -48,6 +48,10 @@
       "types": "./dist/setup/index.d.ts",
       "default": "./dist/setup/index.js"
     },
+    "./capabilities": {
+      "types": "./dist/capabilities.d.ts",
+      "default": "./dist/capabilities.js"
+    },
     "./package.json": "./package.json"
   },
   "bin": {

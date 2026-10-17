@@ -22,6 +22,7 @@
     "lint": "node scripts/run.mjs lint",
     "heroes": "node scripts/run.mjs heroes",
     "mcp": "node scripts/run.mjs mcp",
-    "sync-skill": "node scripts/run.mjs sync-skill"
+    "sync-skill": "node scripts/run.mjs sync-skill",
+    "docs": "node scripts/run.mjs docs"
   }
 }

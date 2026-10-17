@@ -2,11 +2,13 @@
  * Lab server. Zero dependencies, node:http only.
  *
  *   GET  /api/state           { provider, live, calls, harnesses: [{ name, available, install }], harness }
- *   GET  /api/level/:n        { n, options: [{ key, name, file, inputs: [setA, setB, setC], call, code }] }
+ *   GET  /api/level/:n        { n, options: [{ key, name, file, inputs: [setA, setB, setC], call, code, support }] }
+ *                             support: per harness { status: full | degraded | unavailable, note }, null below Level 6
  *   POST /api/run/:n?option=A body { input } -> SSE stream: option-start, then per Jev call
  *                             request (state + questions) and response (typed answers + meta),
  *                             per-option events (tick, beam-step, agent-*), decision, level-done
- *   POST /api/agent/start     body { level, option, config, harness? } -> { id, model, harness }; harness: the body, JEV_AGENT, or the first on PATH
+ *   POST /api/agent/start     body { level, option, config, harness? } -> { id, model, harness }; harness: the body, JEV_AGENT, or the first on PATH;
+ *                             409 when the harness is missing or the option is unavailable in it
  *   GET  /api/agent/:id/events SSE: every session event so far, then live (agent, tool, jev, hook, stats)
  *   POST /api/agent/:id/prompt body { message }
  *   POST /api/agent/:id/abort
@@ -30,6 +32,7 @@ import { sharedJev } from "../src/core/client.ts";
 import { SCENARIOS } from "./scenarios.mjs";
 import * as agents from "./agent-session.mjs";
 import { shutdownRefusal } from "./shutdown.mjs";
+import { capability, levelCapabilities } from "@bobobowis/jev-kit/capabilities";
 import { chooseHarness, HarnessError, harnessState } from "./drivers/index.mjs";
 
 const DIST = fileURLToPath(new URL("../web/dist/", import.meta.url));
@@ -116,6 +119,11 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(err instanceof HarnessError ? 409 : 500, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ error: String(err?.message ?? err) }));
     }
+    const support = capability(Number(body.level), option.key, harness);
+    if (support.status === "unavailable") {
+      res.writeHead(409, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ error: `Level ${body.level} ${option.key} doesn't run under ${harness}: ${support.note}.` }));
+    }
     const session = agents.start({
       level: Number(body.level), option: option.key,
       extension: join(EXT_DIR, option.extension), tools: option.tools, cwd: SANDBOX,
@@ -159,7 +167,7 @@ const server = http.createServer(async (req, res) => {
     const n = Number(levelMatch[1]);
     const options = await Promise.all(SCENARIOS[n].options.map(async (o) => ({
       key: o.key, name: o.name, file: `src/levels/${o.file}`, inputs: o.inputs, call: o.call,
-      extension: o.extension, tools: o.tools,
+      extension: o.extension, tools: o.tools, support: levelCapabilities(n)?.[o.key] ?? null,
       code: stripComments(await readFile(join(LEVELS_DIR, o.file), "utf8")),
     })));
     res.writeHead(200, { "Content-Type": "application/json" });

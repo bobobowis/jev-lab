@@ -5,7 +5,7 @@
  * executable. Node children load the repo's .env with --env-file-if-exists.
  *
  *   node scripts/run.mjs <task> [args]
- *   tasks: build, level <n> [a|b|c], demo, demo-live, test, test-live, web, dev, lint, heroes, mcp [args], sync-skill
+ *   tasks: build, level <n> [a|b|c], demo, demo-live, test, test-live, web, dev, lint, heroes, mcp [args], sync-skill, docs [--check]
  */
 const REQUIRED = [22, 18];
 const [major, minor] = process.versions.node.split(".").map(Number);
@@ -114,6 +114,7 @@ const tasks = {
   heroes: () => bun(["run", "heroes"]),
   mcp: (...args) => steps(build, () => node([ENV_FILE, join(KIT, "dist", "cli", "index.js"), "mcp", ...args], { cwd: APP })),
   "sync-skill": () => node([join(ROOT, "scripts", "sync-skill-core.mjs")]),
+  docs: (...args) => steps(build, () => node([join(ROOT, "scripts", "docs.mjs"), ...args])),
 };
 
 const [name, ...args] = process.argv.slice(2);

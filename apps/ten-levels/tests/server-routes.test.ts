@@ -80,3 +80,19 @@ test("POST /api/agent/start picks the requested harness and says so; Levels 1 to
   const notAgent = await post("/api/agent/start", { level: 3, option: "A" });
   assert.equal(notAgent.status, 404);
 });
+
+test("GET /api/level/:n carries each option's support per harness; Levels 1 to 5 carry none", async () => {
+  const l7 = await fetch(base + "/api/level/7").then((r) => r.json());
+  const c = l7.options.find((o: any) => o.key === "C");
+  assert.equal(c.support.pi.status, "full");
+  assert.equal(c.support.claude.status, "unavailable");
+  assert.equal(l7.options.find((o: any) => o.key === "A").support.codex.status, "degraded");
+  const l2 = await fetch(base + "/api/level/2").then((r) => r.json());
+  assert.equal(l2.options[0].support, null);
+});
+
+test("POST /api/agent/start refuses an option the harness can't run, with the reason", async () => {
+  const r = await withPath(pathWith("claude"), undefined, () => post("/api/agent/start", { level: 7, option: "C", harness: "claude" }));
+  assert.equal(r.status, 409);
+  assert.match((await r.json()).error, /Level 7 C doesn't run under claude: Claude Code doesn't let a hook choose where to cut/);
+});

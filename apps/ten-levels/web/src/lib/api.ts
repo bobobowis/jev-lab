@@ -11,6 +11,13 @@ export interface OptionMeta {
   /** Agent levels only: the extension file and tool allowlist the session loads. */
   extension?: string;
   tools?: string[];
+  /** Agent levels only: how the option runs in each harness. */
+  support?: Record<string, Support> | null;
+}
+
+export interface Support {
+  status: "full" | "degraded" | "unavailable";
+  note?: string;
 }
 
 export interface LevelPayload {
