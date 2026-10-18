@@ -25,8 +25,13 @@ const SESSIONS_DIR = join(APP, ".sessions");
 const WORK_DIR = join(APP, ".sandboxes");
 const IDLE_KILL_MS = 15 * 60_000;
 
-/** The model for a harness: JEV_AGENT_MODEL when set, otherwise the driver's default. */
-export const agentModel = (driver = DRIVERS.pi) => process.env.JEV_AGENT_MODEL || driver.defaultModel;
+/**
+ * The model for a harness: JEV_AGENT_MODEL_<HARNESS> (JEV_AGENT_MODEL_PI, _CLAUDE, _CODEX), then
+ * JEV_AGENT_MODEL, then the driver's default. Model names differ per harness, so the per-harness
+ * one keeps a pi model from reaching Codex.
+ */
+export const agentModel = (driver = DRIVERS.pi, env = process.env) =>
+  env[`JEV_AGENT_MODEL_${driver.name.toUpperCase()}`]?.trim() || env.JEV_AGENT_MODEL?.trim() || driver.defaultModel;
 
 const BASE_ENV = ["PATH", "Path", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "LANG", "LC_ALL", "TERM", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME"];
 const WINDOWS_ENV = ["USERPROFILE", "APPDATA", "LOCALAPPDATA", "SystemRoot", "SYSTEMROOT", "windir", "ComSpec", "PATHEXT", "TEMP", "TMP", "HOMEDRIVE", "HOMEPATH", "ProgramData", "ProgramFiles"];

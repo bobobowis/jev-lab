@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 // @ts-ignore plain JS modules
-import { agentEnv, closeAll, getSession, start } from "../server/agent-session.mjs";
+import { agentEnv, agentModel, closeAll, getSession, start } from "../server/agent-session.mjs";
 // @ts-ignore
 import { DRIVERS } from "../server/drivers/index.mjs";
 
@@ -96,4 +96,12 @@ test("closeAll resolves once every copy is gone, so the lab can exit right after
 
 test("an unknown harness is refused", () => {
   assert.throws(() => start({ level: 6, option: "A", extension: "x", tools: [], cwd: sandbox(), config: {}, harness: "cursor" }), /unknown harness cursor/);
+});
+
+test("agentModel: the harness's own variable, then JEV_AGENT_MODEL, then the driver's default", () => {
+  assert.equal(agentModel(DRIVERS.codex, {}), DRIVERS.codex.defaultModel);
+  assert.equal(agentModel(DRIVERS.codex, { JEV_AGENT_MODEL: "m" }), "m");
+  assert.equal(agentModel(DRIVERS.codex, { JEV_AGENT_MODEL: "m", JEV_AGENT_MODEL_PI: "openai/gpt-6.1-sol" }), "m");
+  assert.equal(agentModel(DRIVERS.pi, { JEV_AGENT_MODEL: "m", JEV_AGENT_MODEL_PI: "openai/gpt-6.1-sol" }), "openai/gpt-6.1-sol");
+  assert.equal(agentModel(DRIVERS.claude, { JEV_AGENT_MODEL_CLAUDE: " claude-sonnet-5-5 " }), "claude-sonnet-5-5");
 });

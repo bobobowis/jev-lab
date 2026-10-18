@@ -43,11 +43,12 @@ tokens in and out; anything an agent doesn't report stays blank.
 Live against OpenRouter when `OPENROUTER_API_KEY` is set (`JEV_BACKEND=mock` forces the offline
 mock for levels 1 to 5). The agent comes from the page's picker, then `JEV_AGENT`, then the first
 installed of pi, Claude Code, and Codex. Each signs in its own way and has its own default model,
-overridden with `JEV_AGENT_MODEL`:
+overridden per agent with `JEV_AGENT_MODEL_PI`, `JEV_AGENT_MODEL_CLAUDE`, or `JEV_AGENT_MODEL_CODEX`
+(`JEV_AGENT_MODEL` sets all three; the names differ per agent, so prefer the per-agent ones):
 
 | Agent | Signs in with | Default model |
 |---|---|---|
-| pi 0.85.1+ | `OPENROUTER_API_KEY` for the default model, or the key of the provider in `JEV_AGENT_MODEL` | `openrouter/google/gemini-3.8-flash` |
+| pi 0.85.1+ | `OPENROUTER_API_KEY` for the default model, or a login or key for the provider in `JEV_AGENT_MODEL_PI` (for example `openai/gpt-6.1-sol` with an OpenAI login) | `openrouter/google/gemini-3.8-flash` |
 | Claude Code 2.1.302+ | your `claude` login, or `ANTHROPIC_API_KEY` | `claude-haiku-5-5` |
 | Codex 0.162+ | your `codex login`, or `OPENAI_API_KEY` | your account's default |
 

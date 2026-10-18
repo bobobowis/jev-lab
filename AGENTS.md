@@ -45,11 +45,12 @@ Levels 1 to 5 need no agent. Levels 6 to 10 run in the lab under whichever of th
 
 | Harness | Install | Credentials | Default model |
 |---|---|---|---|
-| pi 0.85.1+ | `npm install -g @earendil-works/pi-coding-agent` | `OPENROUTER_API_KEY` for the default model, or the key of the provider in `JEV_AGENT_MODEL` | `openrouter/google/gemini-3.8-flash` |
+| pi 0.85.1+ | `npm install -g @earendil-works/pi-coding-agent` | `OPENROUTER_API_KEY` for the default model, or a login or key for the provider in `JEV_AGENT_MODEL_PI` (for example `openai/gpt-6.1-sol` with an OpenAI login) | `openrouter/google/gemini-3.8-flash` |
 | Claude Code 2.1.302+ | `npm install -g @anthropic-ai/claude-code` | your `claude` login, or `ANTHROPIC_API_KEY` | `claude-haiku-5-5` |
 | Codex 0.162+ | `npm install -g @openai/codex` | your `codex login`, or `OPENAI_API_KEY` | the account default |
 
-`JEV_AGENT_MODEL` overrides the model. pi is the reference harness: everything runs there. Under
+`JEV_AGENT_MODEL_PI`, `JEV_AGENT_MODEL_CLAUDE`, and `JEV_AGENT_MODEL_CODEX` override one agent's
+model; `JEV_AGENT_MODEL` overrides all three, so use it only with one agent. pi is the reference harness: everything runs there. Under
 Claude Code and Codex, Level 6 C and Level 7 are degraded and Level 7 C is unavailable; the table
 in `README.md` ("Which harness runs what") is generated from `packages/jev-kit/src/capabilities.ts`.
 Do not install an agent the user didn't ask for; report which levels are unavailable and continue.

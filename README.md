@@ -42,7 +42,7 @@ Then install the coding agent you want for levels 6 to 10. The lab uses the one 
 
 | Agent | Install | Signs in with | Default model |
 |---|---|---|---|
-| pi | `npm install -g @earendil-works/pi-coding-agent` | `OPENROUTER_API_KEY` for the default model, or the key of the provider in `JEV_AGENT_MODEL` | `openrouter/google/gemini-3.8-flash` |
+| pi | `npm install -g @earendil-works/pi-coding-agent` | `OPENROUTER_API_KEY` for the default model, or a login or key for the provider in `JEV_AGENT_MODEL_PI` (for example `openai/gpt-6.1-sol` with an OpenAI login) | `openrouter/google/gemini-3.8-flash` |
 | Claude Code | `npm install -g @anthropic-ai/claude-code` | your `claude` login, or `ANTHROPIC_API_KEY` | `claude-haiku-5-5` |
 | Codex | `npm install -g @openai/codex` | your `codex login`, or `OPENAI_API_KEY` | your account's default |
 
