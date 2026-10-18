@@ -1,0 +1,16 @@
+#!/bin/sh
+# Blocks a commit that adds a live credential; lets it through when Jev is unreachable.
+# Enable once per clone: git config core.hooksPath .githooks
+ROOT=$(git rev-parse --show-toplevel)
+CLI="$ROOT/packages/jev-kit/dist/cli/index.js"
+[ -f "$CLI" ] || exit 0
+git diff --cached --quiet && exit 0
+
+node --env-file-if-exists="$ROOT/.env" "$CLI" gate \
+  "Does output add a real credential (an API key, token, password, or private key with a real-looking value), not a placeholder?" \
+  --command "git diff --cached" --cwd "$ROOT" --threshold 0.7
+case $? in
+  0) echo "pre-commit: this commit seems to add a credential; remove it or commit with --no-verify." >&2; exit 1 ;;
+  3) echo "pre-commit: Jev unavailable, not checked." >&2 ;;
+esac
+exit 0
