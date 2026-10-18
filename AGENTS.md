@@ -13,7 +13,7 @@ calls (8 to 10).
 ```
 packages/jev-kit/    @bobobowis/jev-kit: the client, guards, file reads, agent tools, hooks, MCP server, and the `jev` command
 apps/ten-levels/     the lab: levels in src/levels/, the API and agent drivers in server/, the Vue app in web/, the sandbox repo in sandbox/
-scripts/run.mjs      every task, behind the npm scripts in the root package.json
+scripts/run.mjs      every task, behind the pnpm scripts in the root package.json
 .claude/skills/hyper-jev/   a skill that teaches an agent to build with Jev (its src/core is synced from the package)
 openspec/            specs and changes
 ```
@@ -25,17 +25,16 @@ as `apps/ten-levels/src/levels/level02/`, and one agent level such as `level07/`
 ## Setup
 
 1. **Node 22.18 or later** (24 recommended): `node --version`. The levels run as TypeScript natively.
-2. **Install at the root:** `npm install`. It links the workspace and builds `packages/jev-kit`.
+2. **Install at the root:** `pnpm install` ([pnpm](https://pnpm.io) 12 or later). It links the
+   workspace, installs the Vue lab's dependencies, and builds `packages/jev-kit`.
    Nothing is installed at runtime; TypeScript is dev-only.
-3. **The Vue lab's dependencies**, only for `npm run web` and `npm run dev`:
-   `cd apps/ten-levels/web && bun install` ([bun](https://bun.sh)).
-4. **A Jev key** for live runs: `OPENROUTER_API_KEY` (or `TYPESAFE_API_KEY`, which takes
+3. **A Jev key** for live runs: `OPENROUTER_API_KEY` (or `TYPESAFE_API_KEY`, which takes
    precedence) in the shell or in a root `.env` (copy `.env.sample`). Never print its value; check
    only that it is set.
-5. **Offline tests:** `npm test`. The package's tests, then the lab's, on the deterministic mock,
+4. **Offline tests:** `pnpm test`. The package's tests, then the lab's, on the deterministic mock,
    with no key and no network. Expect 0 failures and 10 live tests skipped.
 
-`cd apps/ten-levels/sandbox && npm test` should fail exactly one test, the proration test. That
+`cd apps/ten-levels/sandbox && pnpm test` should fail exactly one test, the proration test. That
 bug is on purpose; do not fix it in the pristine sandbox.
 
 ## Which agent unlocks what
@@ -45,9 +44,12 @@ Levels 1 to 5 need no agent. Levels 6 to 10 run in the lab under whichever of th
 
 | Harness | Install | Credentials | Default model |
 |---|---|---|---|
-| pi 0.85.1+ | `npm install -g @earendil-works/pi-coding-agent` | `OPENROUTER_API_KEY` for the default model, or a login or key for the provider in `JEV_AGENT_MODEL_PI` (for example `openai/gpt-6.1-sol` with an OpenAI login) | `openrouter/google/gemini-3.8-flash` |
-| Claude Code 2.1.302+ | `npm install -g @anthropic-ai/claude-code` | your `claude` login, or `ANTHROPIC_API_KEY` | `claude-haiku-5-5` |
-| Codex 0.162+ | `npm install -g @openai/codex` | your `codex login`, or `OPENAI_API_KEY` | the account default |
+| pi 0.85.1+ | `pnpm add -g @earendil-works/pi-coding-agent` | `OPENROUTER_API_KEY` for the default model, or a login or key for the provider in `JEV_AGENT_MODEL_PI` (for example `openai/gpt-6.1-sol` with an OpenAI login) | `openrouter/google/gemini-3.8-flash` |
+| Claude Code 2.1.302+ | `pnpm add -g @anthropic-ai/claude-code` | your `claude` login, or `ANTHROPIC_API_KEY` | `claude-haiku-5-5` |
+| Codex 0.162+ | `pnpm add -g @openai/codex` | your `codex login`, or `OPENAI_API_KEY` | the account default |
+
+`pnpm add -g` needs pnpm's global bin folder on PATH: if it fails with `ERR_PNPM_NO_GLOBAL_BIN_DIR`,
+run `pnpm setup` once and open a new shell.
 
 `JEV_AGENT_MODEL_PI`, `JEV_AGENT_MODEL_CLAUDE`, and `JEV_AGENT_MODEL_CODEX` override one agent's
 model; `JEV_AGENT_MODEL` overrides all three, so use it only with one agent. pi is the reference harness: everything runs there. Under
@@ -61,21 +63,21 @@ sandbox with its own settings, hooks, and MCP entry.
 ## Commands
 
 ```bash
-npm test                 # offline: package, then lab
-npm run test:live        # 10 live tests against real Jev (needs a key)
-npm run level -- 4 b     # one level (1 to 10), optionally one option, in the terminal
-npm run demo             # every level and option on the mock
-npm run web              # build the lab and open http://127.0.0.1:4399 (stops an older lab on the port first)
-npm run dev              # Vite with hot reload on 5173; needs npm run web running for the API
-npm run lint             # oxlint over the Vue app
-npm run docs             # regenerate the README capability tables
-npm run sync-skill       # copy the package core into the hyper-jev starter
-npm run mcp -- --level 8 # the Jev tools over stdio MCP
+pnpm test               # offline: package, then lab
+pnpm run test:live      # 10 live tests against real Jev (needs a key)
+pnpm run level 4 b      # one level (1 to 10), optionally one option, in the terminal
+pnpm run demo           # every level and option on the mock
+pnpm run web            # build the lab and open http://127.0.0.1:4399 (stops an older lab on the port first)
+pnpm run dev            # Vite with hot reload on 5173; needs pnpm run web running for the API
+pnpm run lint           # oxlint over the Vue app
+pnpm run docs           # regenerate the README capability tables
+pnpm run sync-skill     # copy the package core into the hyper-jev starter
+pnpm run mcp --level 8  # the Jev tools over stdio MCP
 ```
 
-npm is the only task runner, and every command above works the same on Windows, macOS, and Linux.
-On Windows PowerShell with scripts disabled, `npm` fails with an execution policy error: use
-`npm.cmd`, or ask the user before running `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+pnpm is the only task runner, and every command above works the same on Windows, macOS, and Linux.
+On Windows PowerShell with scripts disabled, `pnpm` fails with an execution policy error: use
+`pnpm.cmd`, or ask the user before running `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
 
 ## Using Jev from your own harness
 
@@ -89,6 +91,6 @@ entry into a project's agent config, merging with what is there. See `packages/j
 - Without a key, calls fail with an error; nothing falls back to the mock silently. Tests inject
   the mock or a fake client.
 - Hooks fail open and never exit 2.
-- After editing `packages/jev-kit/src/core/`, run `npm run sync-skill`; after editing
-  `capabilities.ts`, run `npm run docs`. Tests fail until you do.
+- After editing `packages/jev-kit/src/core/`, run `pnpm run sync-skill`; after editing
+  `capabilities.ts`, run `pnpm run docs`. Tests fail until you do.
 - Keep tests offline and fast; live checks go in `tests/live.test.ts` behind `JEV_LIVE=1`.

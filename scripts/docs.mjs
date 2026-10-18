@@ -22,7 +22,7 @@ for (const doc of MATRIX_DOCS) {
   if (!check) await writeFile(join(root, doc), next);
 }
 if (check && stale.length) {
-  console.error(`capability matrix is out of date in ${stale.join(", ")}. Run npm run docs`);
+  console.error(`capability matrix is out of date in ${stale.join(", ")}. Run pnpm run docs`);
   process.exit(1);
 }
 console.log(stale.length ? `${check ? "stale" : "updated"}: ${stale.join(", ")}` : "capability matrix is up to date");

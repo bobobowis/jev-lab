@@ -7,32 +7,32 @@ Makes every way of running, testing, and setting up the lab work the same on Win
 ## Requirements
 
 ### Requirement: Every command runs on all three OSes
-Every documented command (the `npm run` scripts for the levels, demo, tests, web, dev, lint, heroes, and the MCP server) SHALL run on Windows (PowerShell or cmd), macOS, and Linux without requiring zsh, bash, `lsof`, `xargs`, `open`, or inline `VAR=value` prefixes.
+Every documented command (the `pnpm run` scripts for the levels, demo, tests, web, dev, lint, heroes, and the MCP server) SHALL run on Windows (PowerShell or cmd), macOS, and Linux without requiring zsh, bash, `lsof`, `xargs`, `open`, or inline `VAR=value` prefixes.
 
 #### Scenario: Offline tests on Windows
-- **WHEN** a user on Windows runs `npm test` in `apps/ten-levels`
+- **WHEN** a user on Windows runs `pnpm test` in `apps/ten-levels`
 - **THEN** the offline suite runs and passes with the mock backend
 
 #### Scenario: Fresh clone setup
-- **WHEN** a user on any of the three OSes runs `npm install` at the repo root of a fresh clone
-- **THEN** the workspace links the lab to the package and builds the package, and `npm test` then passes
+- **WHEN** a user on any of the three OSes runs `pnpm install` at the repo root of a fresh clone
+- **THEN** the workspace links the lab to the package and builds the package, and `pnpm test` then passes
 
 #### Scenario: Mock demo on Windows
-- **WHEN** a user on Windows runs `npm run demo`
+- **WHEN** a user on Windows runs `pnpm run demo`
 - **THEN** every level runs on the mock backend, as on macOS and Linux
 
-### Requirement: npm is the only task runner
-Every recipe SHALL be an `npm run` script at the repo root, and the repo SHALL NOT need `just`, `make`, or any other task runner. The scripts SHALL behave the same whether run from the repo root or from `apps/ten-levels`.
+### Requirement: pnpm is the only task runner
+Every recipe SHALL be a `pnpm run` script at the repo root, and the repo SHALL NOT need `just`, `make`, or any other task runner. The scripts SHALL behave the same whether run from the repo root or from `apps/ten-levels`.
 
 #### Scenario: A machine with Node and nothing else
-- **WHEN** a user with only Node, bun, and git runs `npm run level -- 4 b`, `npm run demo`, `npm test`, and `npm run web`
+- **WHEN** a user with only Node, pnpm, and git runs `pnpm run level 4 b`, `pnpm run demo`, `pnpm test`, and `pnpm run web`
 - **THEN** each runs, with no other tool to install
 
 ### Requirement: Web lab starts cleanly anywhere
 Starting the web lab SHALL build the app, free the port if a previous lab holds it, serve on 127.0.0.1:4399 (or `PORT`), and open the default browser using the platform's mechanism, including WSL. Failing to open a browser SHALL only print the URL.
 
 #### Scenario: WSL
-- **WHEN** `npm run web` runs under WSL
+- **WHEN** `pnpm run web` runs under WSL
 - **THEN** the lab is served and opened in the Windows browser, or the URL is printed if no opener is found
 
 ### Requirement: Paths are OS-neutral
@@ -50,7 +50,7 @@ Path handling in levels, tools, and the server SHALL work with either separator 
 The lab SHALL locate and launch the selected agent CLI on every OS, including Windows command shims (`.cmd`), and SHALL stop it, including its child processes, on close.
 
 #### Scenario: Windows shim
-- **WHEN** `claude` is installed through npm on Windows
+- **WHEN** `claude` is installed through npm or pnpm on Windows
 - **THEN** the lab starts it and closing the session leaves no orphaned agent process
 
 ### Requirement: Setup works from any agent
@@ -68,5 +68,5 @@ The repo SHALL give setup and orientation instructions every supported agent pic
 The required Node version SHALL be the one that runs the TypeScript sources natively, stated in `engines` and in the docs, and the scripts SHALL fail with a clear message on an older Node.
 
 #### Scenario: Old Node
-- **WHEN** a user runs `npm test` on a Node version that cannot strip types
+- **WHEN** a user runs `pnpm test` on a Node version that cannot strip types
 - **THEN** the run stops with a message naming the required version

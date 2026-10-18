@@ -39,13 +39,13 @@ test("claude: existing settings, hooks, and servers are kept", () => {
   const dir = project();
   mkdirSync(join(dir, ".claude"));
   writeFileSync(join(dir, ".claude/settings.json"), JSON.stringify({
-    permissions: { allow: ["Bash(npm test)"] },
+    permissions: { allow: ["Bash(pnpm test)"] },
     hooks: { PreToolUse: [{ matcher: "Bash", hooks: [{ type: "command", command: "./audit.sh" }] }] },
   }));
   writeFileSync(join(dir, ".mcp.json"), JSON.stringify({ mcpServers: { db: { command: "db-mcp" } } }));
   apply(plan({ harness: "claude", dir, guards: ["bash"], tools: ["ask_jev_files"], command: CMD }));
   const s = read(dir, ".claude/settings.json");
-  assert.deepEqual(s.permissions, { allow: ["Bash(npm test)"] });
+  assert.deepEqual(s.permissions, { allow: ["Bash(pnpm test)"] });
   assert.equal(s.hooks.PreToolUse.length, 2);
   assert.equal(s.hooks.PreToolUse[0].hooks[0].command, "./audit.sh");
   assert.ok(isJevHookCommand(s.hooks.PreToolUse[1].hooks[0].command));

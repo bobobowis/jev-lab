@@ -44,11 +44,11 @@ Set `SKILL_DIR` to the absolute path of this installed skill. Choose a destinati
 SKILL_DIR="/absolute/path/to/repo/.claude/skills/hyper-jev"
 DEST="./jev-service"
 test ! -e "$DEST" && cp -R "$SKILL_DIR/templates/starter" "$DEST" && (
-  cd "$DEST" && npm test && npm run demo
+  cd "$DEST" && pnpm test && pnpm run demo
 )
 ```
 
-Node 24 executes TypeScript directly. No install is needed for runtime checks. For static checking, install the starter's development dependencies, then run `npm run typecheck`.
+Node 24 executes TypeScript directly. No install is needed for runtime checks. For static checking, install the starter's development dependencies, then run `pnpm run typecheck`.
 
 ## Configure a live service
 
@@ -70,7 +70,7 @@ Load configuration before `new JevClient()`. With an already provisioned local `
 node --env-file=.env src/example.ts
 ```
 
-The template never loads secrets merely because a file is present. Shell-injected credentials work with `npm start`. Do not put keys in frontend environment variables or commit `.env`.
+The template never loads secrets merely because a file is present. Shell-injected credentials work with `pnpm start`. Do not put keys in frontend environment variables or commit `.env`.
 
 ## Integrate into an existing backend
 

@@ -12,9 +12,9 @@ export const DRIVERS = { pi, claude, codex };
 export const ORDER = ["pi", "claude", "codex"];
 
 const INSTALL = {
-  pi: "npm install -g @earendil-works/pi-coding-agent",
-  claude: "npm install -g @anthropic-ai/claude-code",
-  codex: "npm install -g @openai/codex",
+  pi: "pnpm add -g @earendil-works/pi-coding-agent",
+  claude: "pnpm add -g @anthropic-ai/claude-code",
+  codex: "pnpm add -g @openai/codex",
 };
 
 export class HarnessError extends Error {}

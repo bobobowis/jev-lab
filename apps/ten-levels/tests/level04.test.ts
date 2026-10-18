@@ -57,8 +57,8 @@ test("L4 A: a read-only command with decent confidence runs unattended", () => {
   assert.equal(d.requiresHuman, false);
 });
 
-test("L4 A: end-to-end: rm -rf node_modules && npm install is irreversible", async () => {
-  const d = await l4.gateShellCommand("rm -rf node_modules && npm install", "/repo");
+test("L4 A: end-to-end: rm -rf node_modules && pnpm install is irreversible", async () => {
+  const d = await l4.gateShellCommand("rm -rf node_modules && pnpm install", "/repo");
   assert.equal(d.classification, "irreversible");
   assert.equal(d.run, false);
 });

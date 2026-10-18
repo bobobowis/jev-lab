@@ -26,7 +26,7 @@ console.log({ decision, next });
 
 ```bash
 JEV_BACKEND=mock node example.ts
-npm test
+pnpm test
 ```
 
 ## Boundaries and tests

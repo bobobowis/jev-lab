@@ -159,7 +159,7 @@ export function create({ level, tools, config, model, home }) {
       try {
         spawnClaude(null);
       } catch (err) {
-        s.push("error", { message: `${err.message}. Install Claude Code: npm install -g @anthropic-ai/claude-code` });
+        s.push("error", { message: `${err.message}. Install Claude Code: pnpm add -g @anthropic-ai/claude-code` });
         s.ended(1);
         return;
       }

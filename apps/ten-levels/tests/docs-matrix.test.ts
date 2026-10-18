@@ -13,6 +13,6 @@ for (const doc of ["README.md", "apps/ten-levels/README.md", "packages/jev-kit/R
   test(`${doc} carries the current capability matrix`, async () => {
     const text = await readFile(root + doc, "utf8");
     assert.ok(text.includes(MATRIX_START) && text.includes(MATRIX_END), `${doc} has no jev:matrix markers`);
-    assert.equal(withMatrix(text), text, `${doc} is stale; run npm run docs`);
+    assert.equal(withMatrix(text), text, `${doc} is stale; run pnpm run docs`);
   });
 }

@@ -51,7 +51,7 @@ export function plan({ level, tools, config, model, cwd }) {
   return { args, sel };
 }
 
-/** `/bin/bash -lc 'npm test'` is how exec items show a command; the row shows `npm test`. */
+/** `/bin/bash -lc 'pnpm test'` is how exec items show a command; the row shows `pnpm test`. */
 export const plainCommand = (cmd) => {
   const m = String(cmd ?? "").match(/^\S*sh -lc (.*)$/s);
   if (!m) return String(cmd ?? "");
@@ -161,7 +161,7 @@ export function create({ level, tools, config, model }) {
       try {
         child = spawnCli("codex", argv, { cwd: session.cwd, env: session.env, stdio: ["pipe", "pipe", "pipe"] });
       } catch (err) {
-        session.push("error", { message: `${err.message}. Install Codex: npm install -g @openai/codex` });
+        session.push("error", { message: `${err.message}. Install Codex: pnpm add -g @openai/codex` });
         throw err;
       }
       aborted = false;

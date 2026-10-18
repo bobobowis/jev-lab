@@ -15,7 +15,7 @@ Keep credentials server-side. Load them before constructing the client or first 
 Run the full offline starter suite, not just the level tests:
 
 ```bash
-npm test
+pnpm test
 ```
 
 The script explicitly selects mock and runs all bundled tests: core and level examples, HTTP-stub client tests, support-routing policy tests, and usage-ledger tests. No install, API credentials, or network access is needed. `live.test.ts` was intentionally omitted from the portable starter. Default `node:test` isolation also prevents ambient keys from selecting a live provider unless explicitly opted in. Offline tests validate contracts, wiring, and application policy, not semantic accuracy, prompt-injection resistance, or production calibration.

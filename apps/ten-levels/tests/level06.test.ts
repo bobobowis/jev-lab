@@ -26,12 +26,12 @@ test("L6 A: a read only command allows and says why", () => {
 
 test("L6 A: end to end on the mock, the effect is always a declared option", async () => {
   const seen: unknown[] = [];
-  const d = await l6.gateBashCommand("rm -rf node_modules && npm install", "/repo", async (s, q) => {
+  const d = await l6.gateBashCommand("rm -rf node_modules && pnpm install", "/repo", async (s, q) => {
     seen.push(s);
     const { jev } = await import("../src/core/client.ts");
     return jev.systemOne(s, q);
   });
-  assert.deepEqual(seen[0], { command: "rm -rf node_modules && npm install", cwd: "/repo" });
+  assert.deepEqual(seen[0], { command: "rm -rf node_modules && pnpm install", cwd: "/repo" });
   assert.equal(typeof d.block, "boolean");
 });
 

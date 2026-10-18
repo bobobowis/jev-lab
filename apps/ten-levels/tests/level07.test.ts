@@ -77,8 +77,8 @@ test("L7 C: a confident pick becomes instructions, a weak one falls back", () =>
 });
 
 test("L7 C: the mock picks the turn that reads like live work", async () => {
-  const turns = [{ index: 0, request: "Explain the token lifetime" }, { index: 1, request: "Fix the failing proration test and run npm test" }];
+  const turns = [{ index: 0, request: "Explain the token lifetime" }, { index: 1, request: "Fix the failing proration test and run pnpm test" }];
   const { jev } = await import("../src/core/client.ts");
-  const { answers } = await jev.systemOne({ turns, current_request: "run npm test again after the proration fix" }, l7.cutPointQuestion(turns));
+  const { answers } = await jev.systemOne({ turns, current_request: "run pnpm test again after the proration fix" }, l7.cutPointQuestion(turns));
   assert.ok(["0", "1", "none"].includes((answers.live_from as any).choice));
 });

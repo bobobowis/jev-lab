@@ -5,7 +5,7 @@
  * Prints every request, typed answer, latency, and decision.
  *
  * Live through TypeSafe first, otherwise OpenRouter, based on keys; JEV_BACKEND=mock
- * forces the offline mock. `npm run level -- 4` and `npm run level -- 4 b` wrap this.
+ * forces the offline mock. `pnpm run level 4` and `pnpm run level 4 b` wrap this.
  */
 // The demo opts into mock only when no live credentials exist. Otherwise the
 // shared client chooses TypeSafe first, then OpenRouter, once on construction.
@@ -100,8 +100,8 @@ const LEVELS: Record<number, Level> = {
     title: "Confidence Gating",
     sub: "The answer says what. Confidence says whether. Floor, bar, and the middle confirms.",
     options: [
-      opt("A", "Bash Tool Gate", "rm -rf node_modules && npm install  (cwd /repo)",
-        () => l4.gateShellCommand("rm -rf node_modules && npm install", "/repo")),
+      opt("A", "Bash Tool Gate", "rm -rf node_modules && pnpm install  (cwd /repo)",
+        () => l4.gateShellCommand("rm -rf node_modules && pnpm install", "/repo")),
       opt("B", "Account actions", "Please approve the pending withdrawal",
         () => l4.routeAccountAction("Please approve the pending withdrawal")),
       opt("C", "Citation check", "does 'churn within 30 days' support 'Most customers churn within 30 days'?",
@@ -128,8 +128,8 @@ const LEVELS: Record<number, Level> = {
     title: "Guardrail Hooks",
     sub: "Jev in the tool_call and tool_result hooks. The agent never sees the check. Run the lab for the live pi session.",
     options: [
-      opt("A", "Bash gate", "rm -rf node_modules .sessions && npm test  (cwd /repo)",
-        () => l6.gateBashCommand("rm -rf node_modules .sessions && npm test", "/repo")),
+      opt("A", "Bash gate", "rm -rf node_modules .sessions && pnpm test  (cwd /repo)",
+        () => l6.gateBashCommand("rm -rf node_modules .sessions && pnpm test", "/repo")),
       opt("B", "Write gate", "config/.env with a live Stripe key",
         () => l6.gateWriteCall("config/.env", "SESSION_SECRET=8f3a9c2e7b1d4e6f\nSTRIPE_API_KEY=sk_live_51H8xk2Lm9QwErTy", "/repo")),
       opt("C", "Result screen", "a read result that says IGNORE ALL PREVIOUS INSTRUCTIONS",
@@ -155,7 +155,7 @@ const LEVELS: Record<number, Level> = {
         return l7.compactVerdict(l7.decideTier(a, usage, true, l7.DEFAULT_LINES, state), a, usage, l7.DEFAULT_LINES);
       }),
       opt("C", "Pick the cut point", "three turns, which one starts the live work", async () => {
-        const turns = [{ index: 0, request: "Explain the token lifetime." }, { index: 1, request: "List the files under src." }, { index: 2, request: "Fix the failing proration test and run npm test." }];
+        const turns = [{ index: 0, request: "Explain the token lifetime." }, { index: 1, request: "List the files under src." }, { index: 2, request: "Fix the failing proration test and run pnpm test." }];
         const { answers } = await jev.systemOne({ turns }, l7.cutPointQuestion(turns));
         return l7.cutPointInstructions(turns, answers.live_from as never);
       }),

@@ -216,7 +216,7 @@ const server = http.createServer(async (req, res) => {
     } catch { /* next candidate */ }
   }
   res.writeHead(503, { "Content-Type": "text/plain; charset=utf-8" });
-  res.end("No build found. Run `npm run web` (builds web/dist, then starts this server).");
+  res.end("No build found. Run `pnpm run web` (builds web/dist, then starts this server).");
 });
 
 export { server };

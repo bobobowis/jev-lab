@@ -52,12 +52,12 @@ test("L10: assembleState merges own state, files, and a command's output, and ne
   const { assembleState } = l10;
   const SANDBOX = fileURLToPath(new URL("../sandbox/", import.meta.url));
   const run = async (command: string) => ({ command, exit_code: 1, stdout: "not ok 3 - proration", stderr: "" });
-  const a = await assembleState({ state: '{"report": "export is broken"}', paths: ["src/domain/billing.ts"], command: "npm test" }, SANDBOX, run);
+  const a = await assembleState({ state: '{"report": "export is broken"}', paths: ["src/domain/billing.ts"], command: "pnpm test" }, SANDBOX, run);
   assert.equal(a.state.report, "export is broken");
   assert.match((a.state.files as any)["src/domain/billing.ts"], /prorate/);
   assert.equal((a.state.output as any).exit_code, 1);
   assert.deepEqual(a.summary.own_fields, ["report"]);
-  assert.match(a.summary.output!, /npm test, exit 1/);
+  assert.match(a.summary.output!, /pnpm test, exit 1/);
 });
 
 test("L10: plain text state becomes text, nothing at all is refused, pasted content is refused", async () => {

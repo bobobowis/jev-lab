@@ -2,13 +2,10 @@
   "name": "ten-levels-of-jev-workspace",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@12.4.2",
   "engines": {
     "node": ">=22.18"
   },
-  "workspaces": [
-    "packages/jev-kit",
-    "apps/ten-levels"
-  ],
   "scripts": {
     "prepare": "node scripts/run.mjs build",
     "build": "node scripts/run.mjs build",

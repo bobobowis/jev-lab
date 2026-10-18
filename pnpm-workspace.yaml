@@ -1,0 +1,4 @@
+packages:
+  - packages/jev-kit
+  - apps/ten-levels
+  - apps/ten-levels/web
