@@ -78,6 +78,46 @@ const r = await askFileBool("src/billing.ts", "Does this file round money anywhe
 console.log(r.answer, r.noul);   // your script, or the agent, never loads the file
 ```
 
+## Recipes: the lab's levels 1 to 5
+
+The package doesn't export the use cases from levels 1 to 5: they are examples with the lab's own
+categories built in, so copy the one you need. Each one is a single short file that uses only what
+the package exports. Copy it into your project, point its imports at the package, and change the
+options and criteria to your own:
+
+```ts
+// In the lab
+import { jev } from "../../core/client.ts";
+import { noul } from "../../core/helpers.ts";
+import type { NoulAnswer } from "../../core/types.ts";
+import { CONFIDENCE } from "./confidence.ts";          // or { normalized } from "./normalize.ts"
+
+// In your project
+import { jev, noul, type NoulAnswer } from "@bobobowis/jev-kit";
+import { CONFIDENCE, normalized } from "@bobobowis/jev-kit/policy";
+```
+
+| Level | Recipe | Use it for |
+|---|---|---|
+| 1 Single decisions | [`injectionGate`](https://github.com/bobobowis/ten-levels-of-jev/blob/main/apps/ten-levels/src/levels/level01/injection-gate.ts) | A prompt injection gate in front of anything that sends user text to an LLM |
+| | [`urgentGate`](https://github.com/bobobowis/ten-levels-of-jev/blob/main/apps/ten-levels/src/levels/level01/urgency-gate.ts) | Pinging a human only when a message is urgent, with your threshold |
+| | [`classifyTicket`](https://github.com/bobobowis/ten-levels-of-jev/blob/main/apps/ten-levels/src/levels/level01/ticket-classifier.ts) | Routing a ticket to one department, with its confidence |
+| 2 Multiple choice | [`triageTicket`](https://github.com/bobobowis/ten-levels-of-jev/blob/main/apps/ten-levels/src/levels/level02/support-triage.ts) | Route, priority, and a human handoff for a support ticket in one call |
+| | [`screenResume`](https://github.com/bobobowis/ten-levels-of-jev/blob/main/apps/ten-levels/src/levels/level02/resume-screening.ts) | Seniority and fit of a resume against a job description |
+| | [`qualifySponsorForm`](https://github.com/bobobowis/ten-levels-of-jev/blob/main/apps/ten-levels/src/levels/level02/sponsor-qualification.ts) | Qualifying inbound forms or leads by intent and product |
+| 3 Composite scoring | [`ticketPriority`](https://github.com/bobobowis/ten-levels-of-jev/blob/main/apps/ten-levels/src/levels/level03/ticket-priority.ts) | A weighted priority from several scores |
+| | [`codeReviewRisk`](https://github.com/bobobowis/ten-levels-of-jev/blob/main/apps/ten-levels/src/levels/level03/code-review-risk.ts) | The risk of a diff in CI, before a human reviews it |
+| | [`ideaVerdict`](https://github.com/bobobowis/ten-levels-of-jev/blob/main/apps/ten-levels/src/levels/level03/idea-verdict.ts) | Kill, fix, or ship on a pitch or proposal |
+| 4 Confidence gating | [`gateShellCommand`](https://github.com/bobobowis/ten-levels-of-jev/blob/main/apps/ten-levels/src/levels/level04/shell-command-gate.ts) | Allowing a shell command, or asking a human when Jev is unsure |
+| | [`routeAccountAction`](https://github.com/bobobowis/ten-levels-of-jev/blob/main/apps/ten-levels/src/levels/level04/account-actions.ts) | Running an account action on its own, asking for a confirmation before a transfer, and handing off to a human when unsure |
+| | [`checkCitation`](https://github.com/bobobowis/ten-levels-of-jev/blob/main/apps/ten-levels/src/levels/level04/citation-check.ts) | Checking that a quote supports a claim, for RAG answers |
+| 5 Routing | [`routeIntent`](https://github.com/bobobowis/ten-levels-of-jev/blob/main/apps/ten-levels/src/levels/level05/intent-router.ts) | Sending a message to the right handler, and to reasoning only when it needs it |
+| | [`routeModel`](https://github.com/bobobowis/ten-levels-of-jev/blob/main/apps/ten-levels/src/levels/level05/model-router.ts) | The cheapest model and the effort a task needs |
+| | [`routeAgent`](https://github.com/bobobowis/ten-levels-of-jev/blob/main/apps/ten-levels/src/levels/level05/agent-router.ts) | Picking which coding agent takes a task |
+
+Levels 6 to 10 need no copying: they ship as `/guards`, `/compact`, `/files`, and `/tools`, and
+behind `jev guard`, `jev setup`, and `jev mcp`.
+
 ## The jev command
 
 Results go to stdout as JSON, diagnostics to stderr, so stdout pipes straight into `jq`. Every
