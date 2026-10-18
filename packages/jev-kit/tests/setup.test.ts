@@ -139,3 +139,24 @@ test("default command: node and the bin when installed, npx on the exact version
     assert.ok(isJevHookCommand(`${command.join(" ")} hook --harness claude --event Stop`));
   }
 });
+
+test("claude: the mcp guard is its own PreToolUse group; --ask and --allow-read-only go to the bash and mcp hooks", () => {
+  const dir = project();
+  apply(plan({ harness: "claude", dir, guards: ["bash", "write", "mcp"], ask: true, allowReadOnly: true, command: CMD }));
+  const [shell, tools] = read(dir, ".claude/settings.json").hooks.PreToolUse;
+  assert.equal(shell.matcher, "Bash|Write|Edit|MultiEdit|NotebookEdit");
+  assert.equal(shell.hooks[0].command, "node /opt/jev/dist/cli/index.js hook --harness claude --event PreToolUse --guards bash,write --ask --allow-read-only");
+  assert.equal(tools.matcher, "mcp__.*");
+  assert.equal(tools.hooks[0].command, "node /opt/jev/dist/cli/index.js hook --harness claude --event PreToolUse --guards mcp --ask --allow-read-only");
+  apply(plan({ harness: "claude", dir, guards: ["write"], command: CMD }));
+  assert.deepEqual(read(dir, ".claude/settings.json").hooks.PreToolUse.map((g: any) => g.matcher), ["Write|Edit|MultiEdit|NotebookEdit"]);
+});
+
+test("the ladder needs a bash or mcp guard, level 6 leaves the mcp guard out, and Codex refuses what it can't honor", () => {
+  const dir = project();
+  assert.throws(() => plan({ harness: "claude", dir, guards: ["write"], ask: true, command: CMD }), /apply to the bash and mcp guards/);
+  const s = plan({ harness: "claude", dir, level: 6, command: CMD }).find((c) => c.path.endsWith("settings.json"))!;
+  assert.doesNotMatch(s.after, /mcp__/);
+  assert.throws(() => plan({ harness: "codex", dir, guards: ["mcp"], command: CMD }), /Claude Code only/);
+  assert.throws(() => plan({ harness: "codex", dir, guards: ["bash"], ask: true, command: CMD }), /Claude Code only/);
+});

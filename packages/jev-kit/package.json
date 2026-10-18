@@ -1,6 +1,6 @@
 {
   "name": "@bobobowis/jev-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Jev, TypeSafe AI's System One decision model, as a typed client, guards, file reads, agent tools, hooks, an MCP server, and a CLI. Zero runtime dependencies.",
   "type": "module",
   "license": "MIT",

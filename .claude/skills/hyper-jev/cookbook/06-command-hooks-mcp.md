@@ -33,11 +33,16 @@ pre-commit check) or closed (a deploy gate), as in [production checks](05-produc
 jev setup --harness claude --guards bash,write,result --tools ask_jev   # Claude Code: .claude/settings.json and .mcp.json
 jev setup --harness codex --guards bash,write --compact                 # Codex: a marked block in .codex/config.toml
 jev setup --harness claude --level 8 --dry-run                          # print what it would write
+jev setup --harness claude --guards bash,mcp --ask --allow-read-only    # Claude Code: ask when unsure, approve sure reads
 ```
 
 - **Guards** (`bash`, `write`, `result`) run before or after a tool call. A block denies the call
   and tells the agent why. Hooks fail open on a Jev error or timeout, so they are a second signal
   next to the harness's own permissions, never the only control.
+- **The ladder** (`--ask`, `--allow-read-only`; Claude Code only) adds Level 4's middle answer to
+  the bash gate: ask the user when Jev is unsure, leans destructive, or the command publishes,
+  deploys, or pushes; approve what Jev is sure only reads. The `mcp` guard runs the same ladder on
+  other MCP servers' tools and never denies: destructive, outward, and unsure calls ask.
 - **The compaction advisor** (`--compact`) asks after each turn whether the work has moved on and,
   with context high, tells the agent to ask the user to run `/compact`.
 - **Tools** (`ask_jev`, `ask_jev_files`, `ask_jev_file_bool`, ...) let the agent ask Jev about files

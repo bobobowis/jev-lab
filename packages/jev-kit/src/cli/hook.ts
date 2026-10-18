@@ -4,7 +4,7 @@
  * action. Never exits 2, which both harnesses read as "block".
  */
 import { parseArgs } from "node:util";
-import { ALL_GUARDS, runHarnessHook, HOOK_LINES, type Guard, type Harness } from "../hooks/index.ts";
+import { ALL_GUARDS, LEVEL6_GUARDS, runHarnessHook, HOOK_LINES, type Guard, type Harness } from "../hooks/index.ts";
 import { deciderFor, list, readAll, withDeadline, type Io } from "./common.ts";
 
 export const HOOK_HELP = `Usage: jev hook --harness claude|codex --event <HookEvent> [options]
@@ -14,7 +14,9 @@ Reads the hook payload on stdin and answers on stdout. Exit 0 always, except 1 f
 Options:
   --harness <name>     claude or codex
   --event <name>       PreToolUse, PostToolUse, UserPromptSubmit, Stop, PreCompact
-  --guards <list>      bash,write,result (default: all)
+  --guards <list>      bash,write,result,mcp (default: bash,write,result)
+  --ask                the bash and mcp gates ask you when Jev is unsure or leans destructive (Claude Code)
+  --allow-read-only    the bash and mcp gates approve what Jev is sure only reads (Claude Code)
   --compact            run the Level 7 advisor on UserPromptSubmit and Stop
   --lines <n,n,n>      notice, recommend, request lines in context tokens (default ${HOOK_LINES.notice},${HOOK_LINES.recommend},${HOOK_LINES.request})
   --window <tokens>    the model's context window, for percentages
@@ -29,6 +31,7 @@ export async function hook(argv: string[], io: Io): Promise<number> {
       args: argv, strict: true,
       options: {
         harness: { type: "string" }, event: { type: "string" }, guards: { type: "string" }, compact: { type: "boolean" },
+        ask: { type: "boolean" }, "allow-read-only": { type: "boolean" },
         lines: { type: "string" }, window: { type: "string" }, "timeout-ms": { type: "string" }, mock: { type: "boolean" }, help: { type: "boolean", short: "h" },
       },
     }));
@@ -40,7 +43,7 @@ export async function hook(argv: string[], io: Io): Promise<number> {
   const harness = values.harness as Harness;
   if (harness !== "claude" && harness !== "codex") { io.stderr.write(`jev hook: --harness must be claude or codex\n`); return 1; }
   if (!values.event) { io.stderr.write(`jev hook: --event is required\n`); return 1; }
-  const guards = values.guards ? (list(values.guards) as Guard[]) : ALL_GUARDS;
+  const guards = values.guards ? (list(values.guards) as Guard[]) : LEVEL6_GUARDS;
   const unknown = guards.filter((g) => !ALL_GUARDS.includes(g));
   if (unknown.length) { io.stderr.write(`jev hook: unknown guard ${unknown.join(", ")}; known: ${ALL_GUARDS.join(", ")}\n`); return 1; }
   let lines = HOOK_LINES;
@@ -65,7 +68,7 @@ export async function hook(argv: string[], io: Io): Promise<number> {
   }
 
   const response = await withDeadline(
-    runHarnessHook(values.event, payload, { harness, guards, compact: values.compact, lines, window, decide, report: (k, p) => reporter.report(k, p) })
+    runHarnessHook(values.event, payload, { harness, guards, ladder: { ask: values.ask, allowReadOnly: values["allow-read-only"] }, compact: values.compact, lines, window, decide, report: (k, p) => reporter.report(k, p) })
       .catch((err) => { reporter.report("error", { hook: values.event, message: err?.message ?? String(err) }); return null; }),
     timeoutMs,
     () => { reporter.report("error", { hook: values.event, message: `timed out after ${timeoutMs} ms; allowed` }); return null; },

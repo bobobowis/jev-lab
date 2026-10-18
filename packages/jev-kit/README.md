@@ -146,6 +146,7 @@ else alone:
 jev setup --harness claude --guards bash,write,result --tools ask_jev    # .claude/settings.json, .mcp.json
 jev setup --harness codex  --guards bash,write --compact                  # a marked block in .codex/config.toml
 jev setup --harness claude --level 6 --dry-run                            # print, write nothing
+jev setup --harness claude --guards bash,write,mcp --ask --allow-read-only   # the Level 4 ladder, below
 ```
 
 Each run sets the whole selection and replaces only what an earlier run wrote. A settings file that
@@ -203,6 +204,36 @@ harness's own format.
 echo '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git push --force origin main"},"cwd":"."}' \
   | jev hook --harness claude --event PreToolUse --guards bash
 ```
+
+### Ask, don't guess: the Level 4 ladder (Claude Code)
+
+A block or a pass is two answers. Level 4 adds the third: when Jev is unsure, a human decides. Two
+flags put it on the bash gate and the MCP gate, and both work on their own:
+
+- **`--ask`**: short of a block, the bash gate asks you instead of passing when Jev is unsure (effect
+  confidence under 0.5), picks irreversible below the block line, leans destructive (0.4 or more),
+  or sees the command reach outside the machine (publish, deploy, push, `curl … | sh`).
+- **`--allow-read-only`**: a command or MCP call Jev is sure only reads (above 0.9, no destructive
+  or outward lean) is approved, so Claude Code doesn't prompt you for `git status` or a `SELECT`.
+
+The **`mcp` guard** runs the same ladder before any tool from another MCP server (`mcp__<server>__*`;
+Jev's own tools are skipped). Destructive, outward, and unsure calls ask you; it never denies,
+because you connected the server, so you decide. It is opt-in: `--level 6` and `jev hook` without
+`--guards` leave it off.
+
+What it did on live Jev, with both flags:
+
+| Call | Verdict |
+|---|---|
+| `git status`, `grep -rn TODO`, `Neon run_sql SELECT count(*)`, `clerk list_users` | approved: read only (1.00) |
+| `pnpm test`, `git commit`, `mv`, `Neon create_branch`, `Neon run_sql UPDATE ...` | your usual permissions |
+| `npm publish`, `kubectl apply`, `git push`, `curl … \| sh`, `slack send_message` | asks: reaches outside |
+| `git rebase main`, `psql -f migrate.sql` | asks: Jev is unsure (0.27, 0.48) |
+| `Neon run_sql DROP TABLE`, `Neon delete_branch` | asks: destructive |
+| `git push --force`, `git reset --hard`, `rm -rf` | denied, as without the flags |
+
+Codex hooks read only deny, so there the flags and the `mcp` guard would do nothing; `jev setup`
+refuses them for Codex rather than write hooks that don't act.
 
 Hooks fail open: a missing key, a Jev error, or a timeout (8 s by default) allows the action and
 reports an error. They never exit 2. The contracts they rely on are in

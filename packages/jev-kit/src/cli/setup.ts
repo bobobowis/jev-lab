@@ -16,7 +16,9 @@ Each run sets the whole selection: running it again replaces only what it set up
 
 Options:
   --harness <name>    claude or codex
-  --guards <list>     bash,write,result: the Level 6 hooks
+  --guards <list>     bash,write,result: the Level 6 hooks; mcp: the MCP gate on other servers' tools (Claude Code)
+  --ask               the bash and mcp gates ask you when Jev is unsure or leans destructive (Claude Code)
+  --allow-read-only   the bash and mcp gates approve what Jev is sure only reads (Claude Code)
   --tools <list>      Jev tools to serve over MCP, for example ask_jev,ask_jev_files
   --compact           the Level 7 advisor hooks
   --level <n>         a lab level: 6 guards, 7 advisor, 8 to 10 their tools
@@ -33,6 +35,7 @@ export async function setup(argv: string[], io: Io): Promise<number> {
       args: argv, strict: true,
       options: {
         harness: { type: "string" }, guards: { type: "string" }, tools: { type: "string" }, compact: { type: "boolean" },
+        ask: { type: "boolean" }, "allow-read-only": { type: "boolean" },
         level: { type: "string" }, out: { type: "string" }, command: { type: "string" }, "hook-args": { type: "string" },
         "dry-run": { type: "boolean" }, help: { type: "boolean", short: "h" },
       },
@@ -50,6 +53,8 @@ export async function setup(argv: string[], io: Io): Promise<number> {
       guards: values.guards ? (list(values.guards) as Guard[]) : undefined,
       tools: values.tools ? list(values.tools) : undefined,
       compact: values.compact,
+      ask: values.ask,
+      allowReadOnly: values["allow-read-only"],
       level: values.level !== undefined ? Number(values.level) : undefined,
     };
     const changes = plan({
