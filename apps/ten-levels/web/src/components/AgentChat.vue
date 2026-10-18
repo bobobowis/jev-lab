@@ -3,14 +3,17 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { abortAgent, promptAgent, startAgent, stopAgent, subscribeAgent, type AgentItem } from "../lib/agent-api";
 import { answerHTML, esc } from "../lib/viz";
 import { MODELS, countTokens, money } from "../lib/cost";
+import { harnessLabel } from "../lib/harness";
 
 /**
- * The agent window for levels 6 to 10. One real pi session per mount. You prompt it, the box
+ * The agent window for levels 6 to 10. One real session per mount, in the harness given (pi,
+ * Claude Code, or Codex), or none when the option is blocked there. You prompt it, the box
  * locks, Go becomes Stop, and the stream fills with one line per thing that happened: your
  * prompt, the agent's text, each tool call, each Jev call, the level's hook decision. Click a
- * line for the details. The header shows the model, the two costs, and the context bar.
+ * line for the details. The footer shows the harness and model, the two costs, and the context bar; a cost or
+ * context the harness doesn't report stays blank (Codex reports no cost).
  */
-const props = defineProps<{ n: number; option: string; config: Record<string, unknown>; prompt: string; then?: string }>();
+const props = defineProps<{ n: number; option: string; config: Record<string, unknown>; prompt: string; then?: string; harness?: string | null; blocked?: string }>();
 
 type Kind = "user" | "agent" | "tool" | "jev" | "hook" | "compact" | "system" | "error";
 interface Row {
@@ -29,7 +32,16 @@ const model = ref("");
 const contextPct = ref<number | null>(null);
 const contextTokens = ref<number | null>(null);
 const contextWindow = ref<number | null>(null);
-const llmCost = ref(0);
+/** null until the harness reports it, and for good under Codex. */
+const llmCost = ref<number | null>(null);
+const statsSeen = ref(false);
+/** Session token totals, shown in place of the cost when the harness reports tokens but no cost (Codex). */
+const llmTokens = ref<{ input: number; output: number } | null>(null);
+const llmLabel = computed(() => llmCost.value !== null ? money(llmCost.value)
+  : llmTokens.value ? `${fmt(llmTokens.value.input)} in · ${fmt(llmTokens.value.output)} out` : "");
+const llmTitle = computed(() => llmCost.value !== null || !statsSeen.value ? ""
+  : llmTokens.value ? "tokens this session; this harness reports no cost" : "not reported by this harness");
+const sessionHarness = ref("");
 const jevCost = ref(0);
 const jevCalls = ref(0);
 /** Files Jev judged on the agent's behalf. The agent never loaded them, so this is context it never paid for. */
@@ -50,8 +62,8 @@ const listEl = ref<HTMLDivElement | null>(null);
 let unsubscribe: (() => void) | null = null;
 const toolRows = new Map<string, Row>();
 
-const shortModel = computed(() => model.value.replace(/^openrouter\//, ""));
-const ctxLabel = computed(() => (contextTokens.value === null ? "context, waiting for the first reply" : `${contextTokens.value.toLocaleString("en-US")} tokens in context, ${(contextPct.value ?? 0).toFixed(1)}% of ${fmt(contextWindow.value)}`));
+const shortModel = computed(() => model.value.replace(/^(openrouter|anthropic|openai)\//, ""));
+const ctxLabel = computed(() => (contextTokens.value === null ? (statsSeen.value ? "context, not reported by this harness" : "context, waiting for the first reply") : `${contextTokens.value.toLocaleString("en-US")} tokens in context, ${(contextPct.value ?? 0).toFixed(1)}% of ${fmt(contextWindow.value)}`));
 const fmt = (n: number | null) => (n === null ? "" : n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${Math.round(n / 1000)}k` : String(n));
 const first = (s: string, n = 110) => { const line = (s ?? "").trim().split("\n")[0] ?? ""; return line.length > n ? line.slice(0, n - 1) + "…" : line; };
 const textOf = (m: any) => (Array.isArray(m?.content) ? m.content.filter((c: any) => c.type === "text").map((c: any) => c.text).join("\n") : "");
@@ -61,8 +73,8 @@ const argSummary = (_name: string, args: any) => {
   if (!args || typeof args !== "object") return "";
   if (Array.isArray(args.paths_or_globs)) return first(args.paths_or_globs.join(", "), 90);
   if (Array.isArray(args.candidates)) return first(`${args.question ?? ""} (${args.candidates.length} files)`, 90);
-  const v = args.command ?? args.path ?? args.pattern ?? args.question ?? args.note_to_self ?? args.state ?? Object.values(args)[0];
-  return typeof v === "string" ? first(v, 90) : v === undefined ? "" : first(JSON.stringify(v), 90);
+  const v = args.command ?? args.path ?? args.file_path ?? args.pattern ?? args.question ?? args.note_to_self ?? args.state ?? Object.values(args)[0];
+  return typeof v === "string" ? first(v.replace(/^.*[\\/]\.sandboxes[\\/][a-z0-9]+[\\/]/, ""), 90) : v === undefined ? "" : first(JSON.stringify(v), 90);
 };
 
 /** Newest last. The list is a column-reverse flex box, so the bottom stays pinned and older rows scroll up. */
@@ -87,7 +99,10 @@ function onItem({ event, data }: AgentItem) {
     case "session": model.value = data.model; return;
     case "state": if (data.model?.id) model.value = `${data.model.provider ?? ""}/${data.model.id}`.replace(/^\//, ""); return;
     case "stats":
-      llmCost.value = Number(data.cost ?? 0);
+      statsSeen.value = true;
+      llmCost.value = typeof data.cost === "number" ? data.cost : null;
+      // Codex's counts are thread totals, so the latest is the session's.
+      llmTokens.value = typeof data.tokens?.input === "number" ? { input: data.tokens.input, output: data.tokens.output ?? 0 } : null;
       if (data.contextUsage) {
         contextPct.value = data.contextUsage.percent ?? null;
         contextTokens.value = data.contextUsage.tokens ?? null;
@@ -138,7 +153,7 @@ function onItem({ event, data }: AgentItem) {
       } else if (d.kind === "compact") {
         return; // the compact_now tool row already shows the note
       } else if (d.kind === "compact-done") {
-        add({ kind: "compact", tag: "compacted", title: `context now ${Number(d.usage?.pct ?? 0).toFixed(1)}%`, details: d });
+        add({ kind: "compact", tag: "compacted", title: d.usage ? `context now ${Number(d.usage.pct ?? 0).toFixed(1)}%` : "done; the new context size shows after the next reply", details: d });
       } else if (d.kind === "ledger") {
         add({ kind: "system", tag: "ledger", title: d.summary, details: d });
       } else if (d.kind === "error") {
@@ -165,13 +180,15 @@ async function boot() {
   error.value = "";
   rows.value = [];
   toolRows.clear();
-  llmCost.value = 0; jevCost.value = 0; jevCalls.value = 0;
+  llmCost.value = null; jevCost.value = 0; jevCalls.value = 0; statsSeen.value = false; llmTokens.value = null;
   avoided.value = [];
-  contextPct.value = null;
+  contextPct.value = null; contextTokens.value = null; contextWindow.value = null;
+  if (props.blocked) { starting.value = false; return; }
   try {
-    const { id, model: m } = await startAgent(props.n, props.option, props.config);
+    const { id, model: m, harness: h } = await startAgent(props.n, props.option, props.config, props.harness ?? undefined);
     sessionId.value = id;
     model.value = m;
+    sessionHarness.value = h;
     unsubscribe = subscribeAgent(id, onItem);
   } catch (err) {
     error.value = (err as Error).message;
@@ -228,7 +245,7 @@ const pretty = (v: unknown) => esc(typeof v === "string" ? v : JSON.stringify(v,
   <div class="chat">
 
     <div ref="listEl" class="chat-rows">
-      <div v-if="!rows.length" class="meta chat-empty">{{ starting ? "Starting the agent…" : "Send the prompt below. Every tool call, Jev call, and hook decision shows up here as one line. Click a line for the details." }}</div>
+      <div v-if="!rows.length" class="meta chat-empty">{{ blocked ? "No session started. Pick another harness or option above." : starting ? "Starting the agent…" : "Send the prompt below. Every tool call, Jev call, and hook decision shows up here as one line. Click a line for the details." }}</div>
       <button v-for="r in newestFirst" :key="r.id" class="row" :class="[r.kind, r.status]" @click="open = r">
         <span class="row-tag">{{ r.tag }}</span>
         <span class="row-title">{{ r.title }}</span>
@@ -238,23 +255,23 @@ const pretty = (v: unknown) => esc(typeof v === "string" ? v : JSON.stringify(v,
     </div>
 
     <div class="chat-input">
-      <textarea v-model="text" rows="3" :disabled="running || starting" placeholder="Prompt the agent"></textarea>
+      <textarea v-model="text" rows="3" :disabled="running || starting || !!blocked" :placeholder="then ? 'Prompt the agent, or press Then for the follow up' : 'Prompt the agent'"></textarea>
       <div class="chat-actions">
-        <button v-if="then && !running" class="ghost then" :disabled="starting" @click="text = then">Then: {{ first(then, 70) }}</button>
+        <button v-if="then && !running" class="ghost then" :disabled="starting || !!blocked" @click="text = then">Then: {{ first(then, 70) }}</button>
         <span class="spacer"></span>
         <span v-if="error" class="chat-error">{{ error }}</span>
-        <button class="run" :class="{ stop: running }" :disabled="starting || !sessionId" @click="go">{{ running ? "Stop" : "Go" }} <kbd v-if="!running">⌘↵</kbd></button>
+        <button class="run" :class="{ stop: running }" :disabled="starting || !sessionId || !!blocked || (!running && !text.trim())" :title="!running && !text.trim() ? 'Type a prompt first' : ''" @click="go">{{ running ? "Stop" : "Go" }} <kbd v-if="!running">⌘↵</kbd></button>
       </div>
     </div>
 
     <div class="chat-head">
-      <span class="chat-model" :title="model">{{ shortModel || "starting…" }}</span>
+      <span class="chat-model" :title="model"><b v-if="sessionHarness">{{ harnessLabel(sessionHarness) }}</b> {{ shortModel || (blocked ? "" : "starting…") }}</span>
       <span class="spacer"></span>
-      <span class="chat-cost"><b>LLM</b> {{ money(llmCost) }}</span>
+      <span class="chat-cost" :title="llmTitle"><b>LLM</b> {{ llmLabel }}</span>
       <span class="chat-cost"><b>Jev</b> {{ money(jevCost) }}<small v-if="jevCalls"> {{ jevCalls }} call{{ jevCalls === 1 ? "" : "s" }}</small></span>
       <span class="ctx" :title="ctxLabel">
         <span class="ctx-track"><span class="ctx-fill" :style="{ width: `${Math.min(100, contextPct ?? 0)}%` }"></span></span>
-        <span class="ctx-label">{{ contextTokens === null ? "context" : `${fmt(contextTokens)} tokens` }}</span>
+        <span class="ctx-label">{{ contextTokens === null ? "" : `${fmt(contextTokens)} tokens` }}</span>
       </span>
     </div>
 

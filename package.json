@@ -1,0 +1,28 @@
+{
+  "name": "ten-levels-of-jev-workspace",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "workspaces": [
+    "packages/jev-kit",
+    "apps/ten-levels"
+  ],
+  "scripts": {
+    "prepare": "node scripts/run.mjs build",
+    "build": "node scripts/run.mjs build",
+    "test": "node scripts/run.mjs test",
+    "test:live": "node scripts/run.mjs test-live",
+    "demo": "node scripts/run.mjs demo",
+    "demo:live": "node scripts/run.mjs demo-live",
+    "level": "node scripts/run.mjs level",
+    "web": "node scripts/run.mjs web",
+    "dev": "node scripts/run.mjs dev",
+    "lint": "node scripts/run.mjs lint",
+    "heroes": "node scripts/run.mjs heroes",
+    "mcp": "node scripts/run.mjs mcp",
+    "sync-skill": "node scripts/run.mjs sync-skill",
+    "docs": "node scripts/run.mjs docs"
+  }
+}

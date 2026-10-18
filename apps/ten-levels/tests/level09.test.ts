@@ -48,6 +48,31 @@ test("L9 B: globs and directories expand, skip dirs and junk drop with a reason,
   assert.match(reasons["src/b.ts"], /over the 1 file cap/);
 });
 
+test("L9 B: harness and Jev state directories are skipped, results use forward slashes", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "jev9-agents-"));
+  for (const d of [".claude", ".codex", ".jev", join("src", "deep")]) await mkdir(join(dir, d), { recursive: true });
+  await writeFile(join(dir, ".claude", "settings.json"), '{"hooks":{}}');
+  await writeFile(join(dir, ".codex", "config.toml"), "model = 'x'");
+  await writeFile(join(dir, ".jev", "compact.json"), "{}");
+  await writeFile(join(dir, "src", "deep", "a.ts"), "export const a = 1;");
+  // `**/*` never matches dot entries, so nothing under them reaches Jev.
+  assert.deepEqual((await l9.pruneFiles(await l9.expandPatterns(["**/*"], dir, true), dir)).files, ["src/deep/a.ts"]);
+  // Named explicitly, or through a glob that reaches into them, they are reported as skipped.
+  // `.codex/*`, not `**/.codex/*`: Node 22's fs.glob does not match dot directories under `**`.
+  const expanded = await l9.expandPatterns(["src", ".claude/settings.json", ".codex/*", ".jev"], dir, true);
+  const { files, skipped } = await l9.pruneFiles(expanded, dir);
+  assert.deepEqual(files, ["src/deep/a.ts"]);
+  const reasons = Object.fromEntries(skipped.map((s) => [s.path, s.reason]));
+  for (const p of [".claude/settings.json", ".codex/config.toml", ".jev/compact.json"]) assert.match(reasons[p], /skipped directory/, p);
+  assert.ok([...files, ...skipped.map((s) => s.path)].every((p) => !p.includes("\\")));
+});
+
+test("L9 B: paths outside the repo are skipped, never read", async () => {
+  const { files, skipped } = await l9.pruneFiles(["../outside.ts", "/etc/hostname"], SANDBOX);
+  assert.deepEqual(files, []);
+  assert.ok(skipped.every((s) => s.reason === "outside the repo"));
+});
+
 test("L9 A: one call per file with every question, results per path, in parallel", async () => {
   const calls: State[] = [];
   const decide = async (state: State, questions: Questions) => { calls.push(state); return { answers: { touches_auth: { type: "noul", noul: 0.5 } } as any }; };

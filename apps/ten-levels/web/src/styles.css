@@ -310,7 +310,7 @@ button.run kbd{font-family:inherit;font-size:16px;font-weight:600;opacity:.6;mar
 .example.agent{grid-template-columns:minmax(300px,1fr) minmax(0,2fr)}
 .chat{display:flex;flex-direction:column;gap:10px;margin-top:10px}
 .chat-head{display:flex;align-items:center;gap:18px;padding:8px 14px;border:1px solid var(--border);border-radius:10px;background:var(--glass-2);font-size:17px;color:var(--muted)}
-.chat-model{font-family:var(--mono);color:var(--accent);font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:38%}
+.chat-model{font-family:var(--mono);color:var(--accent);font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:48%}
 .chat-cost{white-space:nowrap;color:var(--text)}
 .chat-cost b{color:var(--muted);font-weight:600;margin-right:6px}
 .chat-cost small{color:var(--muted);font-size:16px;margin-left:6px}
@@ -352,3 +352,12 @@ button.run.stop{background:var(--bad);color:#fff;box-shadow:0 0 18px rgba(252,95
 .saved-table{margin:4px 0 8px}
 .saved-table td,.saved-table th{padding:6px 10px;font-size:18px}
 .saved-table tr.jev td{color:var(--accent);font-weight:600}
+.agent-head{display:flex;align-items:center;gap:12px}
+.harness-pick{display:flex;align-items:center;gap:8px}
+.harness-pick select{font:inherit;font-size:16px;padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:var(--glass-2);color:var(--text)}
+.support-note{margin:8px 0;padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:16px;color:var(--text)}
+.support-note.degraded{border-color:var(--warn);background:var(--warn-bg)}
+.support-note.unavailable{border-color:var(--bad);background:var(--bad-bg)}
+.chat-model b{color:var(--muted);font-weight:600;margin-right:6px;font-family:system-ui,sans-serif;font-size:16px}
+.case-badge{margin-left:8px;font-size:14px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.case.unavailable{opacity:.6}

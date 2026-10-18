@@ -1,18 +1,20 @@
 /**
- * The side channel every agent level extension reports on.
+ * The pi side of the event channel, and the glue every pi adapter shares.
  *
- * One JSON line per event on stderr, prefixed `JEV_EVENT`, which the lab's session manager
- * folds into the window's stream in real time. The same payload is appended to the pi
+ * Events go through @bobobowis/jev-kit/events: to `JEV_EVENT_DIR/pi-<pid>.jsonl` when the lab
+ * names a directory, otherwise as `JEV_EVENT` lines on stderr. Each one is also appended to the pi
  * session as a custom entry, so the session file holds the permanent record.
  *
- * `decide` is the one way an extension calls Jev: it validates, calls, reports, and returns.
- * `extra` must not use the keys the report already sets: source, state, questions, answers, usage, model, ms.
+ * Nothing here imports pi or typebox, so the adapters are testable with a fake `pi`. The entry
+ * files in this folder pass pi's `Type` in.
  */
-import { JevClient } from "../src/core/client.ts";
-import { validateQuestions, type Answer, type Questions, type State } from "../src/core/types.ts";
+import { JevClient, type Questions, type State } from "@bobobowis/jev-kit";
+import { createDecider, createReporter, type Decision, type Reporter } from "@bobobowis/jev-kit/events";
+import type { CompactionSource, JevTool, ToolContext, ToolResult } from "@bobobowis/jev-kit/tools";
 
 let client: JevClient | undefined;
-export const jev = () => (client ??= new JevClient({ provider: "openrouter" }));
+/** TypeSafe or OpenRouter, whichever key is set (TypeSafe first), like the rest of the lab; JEV_BACKEND picks one, or mock. */
+export const jev = () => (client ??= new JevClient());
 
 /** The level config the lab passed in, JEV_LEVEL_CONFIG as JSON. */
 export function levelConfig<T extends object>(fallback: T): T {
@@ -24,28 +26,57 @@ export function levelConfig<T extends object>(fallback: T): T {
   }
 }
 
+const reporters = new WeakMap<object, Reporter>();
+function reporterFor(pi: any): Reporter {
+  let r = reporters.get(pi);
+  if (!r) {
+    r = createReporter({ harness: "pi", onEvent: (kind, payload) => pi.appendEntry?.(`jev-${kind}`, payload) });
+    reporters.set(pi, r);
+  }
+  return r;
+}
+
 export function report(pi: any, kind: string, payload: Record<string, unknown>): void {
-  const body = { kind, at: Date.now(), ...payload };
-  process.stderr.write("JEV_EVENT " + JSON.stringify(body) + "\n");
-  try { pi.appendEntry?.(`jev-${kind}`, payload); } catch { /* entries are optional */ }
+  reporterFor(pi).report(kind, payload);
 }
 
-export interface Decision {
-  answers: Record<string, Answer>;
-  usage: { input_tokens: number; output_tokens: number; cost?: number };
-  model: string;
-  ms: number;
+export type { Decision };
+
+/** One Jev call from inside the harness. `source` names who asked, a hook or a tool. */
+export function decide(pi: any, source: string, state: State, questions: Questions, extra: Record<string, unknown> = {}): Promise<Decision> {
+  return createDecider(reporterFor(pi), jev)(source, state, questions, extra);
 }
 
-/**
- * One Jev call from inside the harness. `source` names who asked, a hook or a tool, so the
- * window can label the row. The full state, questions, and answers travel on the side channel.
- */
-export async function decide(pi: any, source: string, state: State, questions: Questions, extra: Record<string, unknown> = {}): Promise<Decision> {
-  validateQuestions(questions);
-  const started = performance.now();
-  const result = await jev().systemOne(state, questions);
-  const out: Decision = { answers: result.answers, usage: result.usage, model: result.model, ms: Math.round(performance.now() - started) };
-  report(pi, "jev", { source, state, questions, answers: out.answers, usage: out.usage, model: out.model, ms: out.ms, ...extra });
-  return out;
+export function toolContext(pi: any, cwd: string, compaction?: CompactionSource): ToolContext {
+  return {
+    cwd,
+    harness: "pi",
+    decide: (source, state, questions, extra) => decide(pi, source, state, questions, extra),
+    report: (kind, payload) => report(pi, kind, payload),
+    compaction,
+  };
+}
+
+/** pi's tool result shape. */
+export const toPi = (r: ToolResult) =>
+  r.isError ? { content: [{ type: "text", text: r.text }], isError: true } : { content: [{ type: "text", text: r.text }], details: r.payload };
+
+/** What the adapters need from pi's typebox: wrap a plain JSON Schema so pi's validator accepts it. */
+export interface PiTypes {
+  Unsafe(schema: unknown): unknown;
+}
+
+/** Register a package tool with pi. `after` sees every result, for a ledger. */
+export function registerJevTool(pi: any, Type: PiTypes, tool: JevTool, opts: { compaction?: (ctx: any) => CompactionSource; after?: (r: ToolResult) => void } = {}): void {
+  pi.registerTool({
+    name: tool.name,
+    label: tool.label,
+    description: tool.description,
+    parameters: Type.Unsafe(tool.parameters),
+    async execute(_id: string, params: any, _signal: AbortSignal, _onUpdate: any, ctx: any) {
+      const r = await tool.execute(params ?? {}, toolContext(pi, ctx?.cwd ?? process.cwd(), opts.compaction?.(ctx)));
+      opts.after?.(r);
+      return toPi(r);
+    },
+  });
 }

@@ -1,6 +1,6 @@
 /**
- * Runs all 10 levels against the mock backend (or live API if TYPESAFE_API_KEY
- * is set) and prints one compact table per level.
+ * Runs all 10 levels and prints one compact table per level. Live through TypeSafe or OpenRouter
+ * when a key is set; `--mock` forces the offline mock: node src/demo.ts --mock
  */
 import { fileURLToPath } from "node:url";
 import { jev } from "./core/client.ts";
@@ -15,6 +15,9 @@ import * as l7 from "./levels/level07/index.ts";
 import * as l8 from "./levels/level08/index.ts";
 import * as l9 from "./levels/level09/index.ts";
 import * as l10 from "./levels/level10/index.ts";
+
+// The shared client is built on first use, after this line.
+if (process.argv.includes("--mock")) process.env.JEV_BACKEND = "mock";
 
 const log = (s: string) => console.log(s);
 const head = (level: string, title: string) => log(`\n\x1b[36m${level} — ${title}\x1b[0m`);

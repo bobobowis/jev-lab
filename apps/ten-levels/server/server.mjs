@@ -1,16 +1,19 @@
 /**
  * Lab server. Zero dependencies, node:http only.
  *
- *   GET  /api/state           { provider, live, calls }
- *   GET  /api/level/:n        { n, options: [{ key, name, file, inputs: [setA, setB, setC], call, code }] }
+ *   GET  /api/state           { provider, live, calls, harnesses: [{ name, available, install }], harness }
+ *   GET  /api/level/:n        { n, options: [{ key, name, file, inputs: [setA, setB, setC], call, code, support }] }
+ *                             support: per harness { status: full | degraded | unavailable, note }, null below Level 6
  *   POST /api/run/:n?option=A body { input } -> SSE stream: option-start, then per Jev call
  *                             request (state + questions) and response (typed answers + meta),
  *                             per-option events (tick, beam-step, agent-*), decision, level-done
- *   POST /api/agent/start     body { level, option, config } -> { id, model }; spawns pi in RPC mode
+ *   POST /api/agent/start     body { level, option, config, harness? } -> { id, model, harness }; harness: the body, JEV_AGENT, or the first on PATH;
+ *                             409 when the harness is missing or the option is unavailable in it
  *   GET  /api/agent/:id/events SSE: every session event so far, then live (agent, tool, jev, hook, stats)
  *   POST /api/agent/:id/prompt body { message }
  *   POST /api/agent/:id/abort
  *   DELETE /api/agent/:id
+ *   POST /api/shutdown        from 127.0.0.1 with x-jev-lab: shutdown; closes sessions and exits, so a new lab can take the port
  *   GET  /*                   the built Vue app in ../web/dist (SPA fallback to index.html)
  *
  * Live by default when a TypeSafe or OpenRouter key is set; JEV_BACKEND=mock forces offline.
@@ -24,10 +27,13 @@ if (!process.env.JEV_BACKEND && !process.env.TYPESAFE_API_KEY?.trim() && !proces
 import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { extname, join, normalize } from "node:path";
+import { extname, join, normalize, resolve } from "node:path";
 import { sharedJev } from "../src/core/client.ts";
 import { SCENARIOS } from "./scenarios.mjs";
 import * as agents from "./agent-session.mjs";
+import { shutdownRefusal } from "./shutdown.mjs";
+import { capability, levelCapabilities } from "@bobobowis/jev-kit/capabilities";
+import { chooseHarness, HarnessError, harnessState } from "./drivers/index.mjs";
 
 const DIST = fileURLToPath(new URL("../web/dist/", import.meta.url));
 const EXT_DIR = fileURLToPath(new URL("../extensions/", import.meta.url));
@@ -79,12 +85,21 @@ async function runOption(level, option, input, res) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
 
-  if (url.pathname === "/api/state") {
-    res.writeHead(200, { "Content-Type": "application/json" });
-    return res.end(JSON.stringify({ provider: client.provider, live: client.isLive, calls: client.calls }));
+  if (url.pathname === "/api/shutdown") {
+    const refused = shutdownRefusal(req);
+    res.writeHead(refused ? 403 : 200, { "Content-Type": "application/json" });
+    if (refused) return res.end(JSON.stringify({ error: refused }));
+    res.end(JSON.stringify({ lab: true, stopping: true }));
+    stop();
+    return;
   }
 
-  // Agent sessions: one pi process per run, driven over RPC.
+  if (url.pathname === "/api/state") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ provider: client.provider, live: client.isLive, calls: client.calls, ...harnessState() }));
+  }
+
+  // Agent sessions: one coding agent per run, in the harness the request, JEV_AGENT, or PATH picks.
   if (url.pathname === "/api/agent/start" && req.method === "POST") {
     let body;
     try { body = await readJson(req); } catch { res.writeHead(400); return res.end("{}"); }
@@ -94,13 +109,25 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(404, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ error: "not an agent level or unknown option" }));
     }
+    let harness;
+    try {
+      harness = chooseHarness(typeof body.harness === "string" ? body.harness : "");
+    } catch (err) {
+      res.writeHead(err instanceof HarnessError ? 409 : 500, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ error: String(err?.message ?? err) }));
+    }
+    const support = capability(Number(body.level), option.key, harness);
+    if (support.status === "unavailable") {
+      res.writeHead(409, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ error: `Level ${body.level} ${option.key} doesn't run under ${harness}: ${support.note}.` }));
+    }
     const session = agents.start({
       level: Number(body.level), option: option.key,
       extension: join(EXT_DIR, option.extension), tools: option.tools, cwd: SANDBOX,
-      config: body.config ?? {},
+      config: body.config ?? {}, harness,
     });
     res.writeHead(200, { "Content-Type": "application/json" });
-    return res.end(JSON.stringify({ id: session.id, model: session.model }));
+    return res.end(JSON.stringify({ id: session.id, model: session.model, harness: session.harness }));
   }
   const agentMatch = url.pathname.match(/^\/api\/agent\/([a-z0-9]+)(?:\/(events|prompt|abort))?$/);
   if (agentMatch) {
@@ -137,7 +164,7 @@ const server = http.createServer(async (req, res) => {
     const n = Number(levelMatch[1]);
     const options = await Promise.all(SCENARIOS[n].options.map(async (o) => ({
       key: o.key, name: o.name, file: `src/levels/${o.file}`, inputs: o.inputs, call: o.call,
-      extension: o.extension, tools: o.tools,
+      extension: o.extension, tools: o.tools, support: levelCapabilities(n)?.[o.key] ?? null,
       code: stripComments(await readFile(join(LEVELS_DIR, o.file), "utf8")),
     })));
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -189,9 +216,27 @@ const server = http.createServer(async (req, res) => {
     } catch { /* next candidate */ }
   }
   res.writeHead(503, { "Content-Type": "text/plain; charset=utf-8" });
-  res.end("No build found. Run `just web` (builds web/dist, then starts this server).");
+  res.end("No build found. Run `npm run web` (builds web/dist, then starts this server).");
 });
 
-server.listen(PORT, "127.0.0.1", () => {
-  console.log(`10 Levels of Jev lab → http://127.0.0.1:${PORT} (backend: ${client.provider})`);
-});
+export { server };
+
+/** Stop the lab: close every session and wait for its copy to go (3 s at most), then exit. */
+let stopping = false;
+function stop() {
+  if (stopping) return;
+  stopping = true;
+  server.close();
+  server.closeAllConnections?.();
+  const cap = new Promise((r) => setTimeout(r, 3000)); // ref'd: the loop stays up until the copies go
+  Promise.race([agents.closeAll(), cap]).finally(() => process.exit(0));
+}
+
+// Listen when run as the lab; tests import the server and listen on a port of their own.
+if (process.argv[1] && resolve(fileURLToPath(import.meta.url)).toLowerCase() === resolve(process.argv[1]).toLowerCase()) {
+  for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, stop);
+  server.listen(PORT, "127.0.0.1", () => {
+    const { harness } = harnessState();
+    console.log(`10 Levels of Jev lab → http://127.0.0.1:${PORT} (backend: ${client.provider}, agent: ${harness ?? "none installed"})`);
+  });
+}

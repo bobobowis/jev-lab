@@ -14,8 +14,9 @@ async function post(path: string, body?: unknown): Promise<any> {
   return json;
 }
 
-export function startAgent(level: number, option: string, config: Record<string, unknown>): Promise<{ id: string; model: string }> {
-  return post("/api/agent/start", { level, option, config });
+/** Starts a session in the harness given, or the server's default (JEV_AGENT, then the first on PATH). */
+export function startAgent(level: number, option: string, config: Record<string, unknown>, harness?: string): Promise<{ id: string; model: string; harness: string }> {
+  return post("/api/agent/start", { level, option, config, harness: harness || undefined });
 }
 
 export const promptAgent = (id: string, message: string) => post(`/api/agent/${id}/prompt`, { message });

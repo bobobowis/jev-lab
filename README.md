@@ -1,7 +1,7 @@
 # 10 Levels of Jev
 
 > **Ten levels of Jev, from one smart if statement to a coding agent that reaches for Jev on its own.**
-> Real incremental use cases for agentic engineers: a live lab, a terminal runner, real pi agent sessions, and a skill you can hand your agents.
+> Real incremental use cases for agentic engineers: a live lab, a terminal runner, real agent sessions under pi, Claude Code, or Codex, a `jev` command for scripts and agents, and a skill you can hand your agents.
 
 📺 Watch this video to get the full breakdown of this codebase: **[10 Levels of Jev for Agentic Engineers on YouTube](https://youtu.be/_U-O5lYhJ7Q)**
 
@@ -13,7 +13,7 @@
   <img src="images/01_ten_levels_ladder.png" alt="10 Levels of Jev: levels 1 to 5 from code, levels 6 to 10 inside the agent" width="850">
 </p>
 
-Strip away the launch hype and [Jev](https://typesafe.ai) is one thing: **intelligent question answering, programmable through JSON.** You send TypeSafe's System One model a state and typed questions. About 300 ms later you get typed answers back, with probabilities your code can branch on, for a fraction of a cent. This repo arranges thirty concrete uses of Jev into ten levels. Levels 1 to 5 call Jev from plain code. Levels 6 to 10 put Jev inside the pi coding agent, first as hooks the agent never sees, then as tools the agent chooses to call, until the agent writes the questions itself. Every level runs live against real Jev, and every option is tested.
+Strip away the launch hype and [Jev](https://typesafe.ai) is one thing: **intelligent question answering, programmable through JSON.** You send TypeSafe's System One model a state and typed questions. About 300 ms later you get typed answers back, with probabilities your code can branch on, for a fraction of a cent. This repo arranges thirty concrete uses of Jev into ten levels. Levels 1 to 5 call Jev from plain code. Levels 6 to 10 put Jev inside a coding agent (pi, Claude Code, or Codex), first as hooks the agent never sees, then as tools the agent chooses to call, until the agent writes the questions itself. Every level runs live against real Jev, and every option is tested.
 
 ---
 
@@ -21,25 +21,32 @@ Strip away the launch hype and [Jev](https://typesafe.ai) is one thing: **intell
 
 ### Agentic Install
 
-```bash
-just install        # runs the /install slash command in Claude Code (or Pi, or your favorite agentic coding tool)
-```
-
-The `/install` command lives at `.claude/commands/install.md`. It checks Node, bun, just, git, and pi, installs the lab's dependencies, confirms your key without printing it, verifies the sandbox, and runs the offline suite.
+Open the repo in Claude Code and run `/install`, or ask Codex, pi, or any other coding agent to set it up: [`AGENTS.md`](AGENTS.md) holds the setup steps for every agent, and `/install` follows it plus a few Claude Code checks. It checks Node, bun, and git, reports which coding agents are installed and which levels they unlock, installs the dependencies, confirms your key without printing it, verifies the sandbox, and runs the offline suite.
 
 ### Manual Install
 
-**Prereqs:** [Node 24](https://nodejs.org), [bun](https://bun.sh), [just](https://github.com/casey/just), [pi 0.85.1+](https://github.com/earendil-works/pi-mono) for levels 6 to 10, and an [OpenRouter key](https://openrouter.ai/keys) for live runs.
+**Prereqs:** [Node 22.18+](https://nodejs.org) (24 recommended), [bun](https://bun.sh), git, an [OpenRouter key](https://openrouter.ai/keys) for live runs, and for levels 6 to 10 one coding agent: [pi 0.85.1+](https://github.com/earendil-works/pi-mono), [Claude Code](https://claude.com/claude-code) 2.1.302+, or [Codex](https://github.com/openai/codex) 0.162+.
+
+These run the same in a macOS or Linux shell and in Windows PowerShell or cmd. If PowerShell says running scripts is disabled ("la ejecución de scripts está deshabilitada"), allow them for your user once with `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, or type `npm.cmd` and `bun.cmd` instead of `npm` and `bun`.
 
 ```bash
-cd apps/ten-levels/web && bun install && cd ../../..   # the Vue lab's dependencies; the levels themselves have none
-cp .env.sample .env                                    # then set OPENROUTER_API_KEY (or export it in your shell)
-npm install -g @earendil-works/pi-coding-agent         # pi, for levels 6 to 10
-just test                                              # 201 offline tests on the deterministic mock
-just web                                               # build the lab and open it on http://127.0.0.1:4399
+npm install                                    # links the workspace and builds packages/jev-kit; no runtime dependencies
+bun install --cwd apps/ten-levels/web          # the Vue lab's dependencies
+npm test                                       # the offline tests on the deterministic mock
+npm run web                                    # build the lab and open it on http://127.0.0.1:4399
 ```
 
-No key? Levels 1 to 5 still run on the offline mock. Levels 6 to 10 need both pi and the key.
+Put the key in a `.env` at the root, from `.env.sample`: `cp .env.sample .env` on macOS and Linux, `Copy-Item .env.sample .env` in PowerShell, then set `OPENROUTER_API_KEY`. Or set it in your shell (`export OPENROUTER_API_KEY=...`, or `$env:OPENROUTER_API_KEY="..."` in PowerShell).
+
+Then install the coding agent you want for levels 6 to 10. The lab uses the one you pick on the page, or `JEV_AGENT`, or the first it finds in this order:
+
+| Agent | Install | Signs in with | Default model |
+|---|---|---|---|
+| pi | `npm install -g @earendil-works/pi-coding-agent` | `OPENROUTER_API_KEY` for the default model, or a login or key for the provider in `JEV_AGENT_MODEL_PI` (for example `openai/gpt-6.1-sol` with an OpenAI login) | `openrouter/google/gemini-3.8-flash` |
+| Claude Code | `npm install -g @anthropic-ai/claude-code` | your `claude` login, or `ANTHROPIC_API_KEY` | `claude-haiku-5-5` |
+| Codex | `npm install -g @openai/codex` | your `codex login`, or `OPENAI_API_KEY` | your account's default |
+
+No key? Levels 1 to 5 still run on the offline mock. Levels 6 to 10 need the key and one of the agents. The lab never reads or changes your own agent settings: each session gets its own copy of the sandbox with its own config.
 
 ---
 
@@ -119,7 +126,7 @@ Every example below quotes a live run of the lab. Your numbers will move a littl
 
 ## Levels 1 to 5: Jev from code
 
-Each option is a plain async function. Run one level in the terminal with `just jev1` through `just jev5`, or one option with `just jev4 b`. The code lives in `apps/ten-levels/src/levels/level01/` through `level05/`.
+Each option is a plain async function. Run one level in the terminal with `npm run level -- 1` through `npm run level -- 5`, or one option with `npm run level -- 4 b`. The code lives in `apps/ten-levels/src/levels/level01/` through `level05/`.
 
 ### Level 1: Single Decisions
 
@@ -207,9 +214,35 @@ The agent router picks the harness (script, fast agent, reasoning agent, browser
   <img src="images/14_jev_across_the_harness.png" alt="Jev across the harness: levels 6 and 7 run at the tool call, tool result, and turn end hooks; levels 8, 9, and 10 are tools the agent calls" width="780">
 </p>
 
-Levels 1 to 5 call Jev from code. Levels 6 to 10 put Jev inside the [pi coding agent](https://github.com/earendil-works/pi-mono), and each level gives the agent more say over the questions. **Levels 6 and 7 are hooks:** the agent never asks, and Jev runs at the tool call, the tool result, and the turn end. **Levels 8, 9, and 10 are tools:** the agent decides when to call Jev, and by Level 10 it writes the questions itself.
+Levels 1 to 5 call Jev from code. Levels 6 to 10 put Jev inside a coding agent, and each level gives the agent more say over the questions. **Levels 6 and 7 are hooks:** the agent never asks, and Jev runs at the tool call, the tool result, and the turn end. **Levels 8, 9, and 10 are tools:** the agent decides when to call Jev, and by Level 10 it writes the questions itself.
 
-Each level is one pi extension in `apps/ten-levels/extensions/` that imports its decision code from `src/levels/`. The lab runs each one as a real pi session (a fast workhorse model by default, set with `JEV_AGENT_MODEL`) in a throwaway git copy of `sandbox/`, a small billing service with one failing test on purpose.
+The decision code lives in `@bobobowis/jev-kit`, the package in `packages/jev-kit/`. Under [pi](https://github.com/earendil-works/pi-mono), each level is one extension in `apps/ten-levels/extensions/`. Under Claude Code and Codex, the same code runs as `jev hook` (the hooks) and `jev mcp` (the tools). The lab runs each level as a real session in the agent you pick (a fast workhorse model by default, set with `JEV_AGENT_MODEL`) in a throwaway git copy of `sandbox/`, a small billing service with one failing test on purpose.
+
+### Which harness runs what
+
+The lab runs Levels 6 to 10 under pi, Claude Code, or Codex, and the tools from Levels 7 to 10 work in any MCP client through `jev mcp`. pi is the reference: hooks there can block, rewrite results, and compact. Claude Code and Codex run the same guards and tools through `jev hook` and `jev mcp`, with the differences noted.
+
+<!-- jev:matrix (generated by `npm run docs` from packages/jev-kit/src/capabilities.ts) -->
+
+| Level | pi | Claude Code | Codex | Generic MCP |
+|---|---|---|---|---|
+| 6 A Bash gate | full | full | full | unavailable (an MCP client has no hooks) |
+| 6 B Write gate | full | full | full (apply_patch is read from the patch text) | unavailable (an MCP client has no hooks) |
+| 6 C Result screen | full | degraded (the banner is added as context, not above the output) | degraded (the banner is added as context, not above the output) | unavailable (an MCP client has no hooks) |
+| 7 A Turn end hook | full | degraded (advisory after each turn, delivered on the next prompt; no compact_now) | degraded (advisory after each turn, delivered on the next prompt; no compact_now) | unavailable (an MCP client has no turn end hook) |
+| 7 B On demand tool | full | degraded (no compact_now; the agent asks you to run /compact) | degraded (no compact_now; Codex can't compact from a tool) | degraded (no compact_now) |
+| 7 C Pick the cut point | full | unavailable (Claude Code doesn't let a hook choose where to cut) | unavailable (Codex doesn't let a hook choose where to cut) | unavailable (an MCP client has no compaction hook) |
+| 8 A ask_jev_file_bool | full | full | full (the built-in shell can't be removed) | full |
+| 8 B ask_jev_file_choice | full | full | full (the built-in shell can't be removed) | full |
+| 8 C ask_jev_file_score | full | full | full (the built-in shell can't be removed) | full |
+| 9 A Several paths, one block | full | full | full (the built-in shell can't be removed) | full |
+| 9 B A glob over a directory | full | full | full (the built-in shell can't be removed) | full |
+| 9 C Recursive, then pick first | full | full | full (the built-in shell can't be removed) | full |
+| 10 A Triage a failure | full | full | full (the built-in shell can't be removed) | full |
+| 10 B Judge a diff before shipping | full | full | full (the built-in shell can't be removed) | full |
+| 10 C Classify a request, gate a plan | full | full | full (the built-in shell can't be removed) | full |
+
+<!-- /jev:matrix -->
 
 ### Level 6: Guardrail Hooks
 
@@ -336,6 +369,21 @@ claude "/hyper-jev add a Jev urgency gate in front of our support webhook"
 
 ---
 
+## Use Jev outside the lab: the package and the jev command
+
+`packages/jev-kit/` is `@bobobowis/jev-kit`: the client, the guards, the file reads, and the agent tools, with no runtime dependencies. It also ships `jev`, a command for scripts, CI, git hooks, and coding agents. It is not on npm yet; `npm pack -w packages/jev-kit` makes a tarball you can install anywhere. `jev` reads `TYPESAFE_API_KEY` or `OPENROUTER_API_KEY` from the environment; the root `.env` is loaded only by the npm scripts.
+
+```bash
+jev gate "Is this ticket about billing?" --state "I was charged twice this month" && echo billing   # the exit code is the answer
+jev guard bash "git push --force origin main"                                                       # block, exit 1
+jev setup --harness claude --guards bash,write --tools ask_jev                                      # Jev hooks and tools in your own Claude Code project
+jev setup --harness codex --guards bash,write --tools ask_jev                                       # the same for Codex
+```
+
+Every command, the library by entry point, and the hook and MCP setup are in [`packages/jev-kit/README.md`](packages/jev-kit/README.md).
+
+---
+
 ## How the lab works
 
 <p align="center">
@@ -344,9 +392,9 @@ claude "/hyper-jev add a Jev urgency gate in front of our support webhook"
 
 **Levels 1 to 5 run one call.** Pick a use case card, pick an input set or edit the state, press **Run live**, and read the exact request body, the typed answers as probability bars, the response body, and a cost table that prices the same call across six chat models against Jev at volumes from 1 to 1,000,000. With **Visual** on, an animated modal replays the call first.
 
-**Levels 6 to 10 open an agent window.** The server spawns a real `pi` process in RPC mode, in its own git initialized copy of `sandbox/`, with the level's extension and an explicit tool allowlist. You prompt it, the box locks, Go becomes Stop, and every tool call, Jev call, and hook decision lands as one line. Click a line for its details. The footer shows the model, the LLM cost, the Jev cost, and the context in tokens. On levels 8 and 9 the window adds the files the agent never loaded, priced at each model against what Jev charged.
+**Levels 6 to 10 open an agent window.** Pick the agent in the window's Harness menu. The server starts it in its own git initialized copy of `sandbox/` with an explicit tool allowlist: pi in RPC mode with the level's extension, or Claude Code over stream-json or Codex with one `codex exec` per prompt, both with the level's hooks and MCP tools. Each option is marked degraded or unavailable when the agent you picked can't run it fully, and an unavailable one doesn't start. You prompt it, the box locks, Go becomes Stop, and every tool call, Jev call, and hook decision lands as one line. Click a line for its details. The footer shows the agent and model, the LLM cost, the Jev cost, and the context in tokens. Codex reports tokens but no cost, so under Codex the LLM figure is the session's tokens in and out. On levels 8 and 9 the window adds the files the agent never loaded, priced at each model against what Jev charged.
 
-The landing page starts with every level hidden. Opening a level reveals its card, and a shift reload on port 4399 hides them all again. Extensions report every decision on stderr as `JEV_EVENT` lines, which the server folds into the window's stream, and as pi session entries, so the session file keeps the record.
+The landing page starts with every level hidden. Opening a level reveals its card, and a shift reload on port 4399 hides them all again. The extensions, hooks, and MCP server report every decision as JSON lines in the session's event directory, which the server folds into the window's stream. Under pi they are also session entries, so the session file keeps the record.
 
 ---
 
@@ -354,10 +402,15 @@ The landing page starts with every level hidden. Opening a level reveals its car
 
 ```
 .
-├── apps/ten-levels/
+├── AGENTS.md                # setup and orientation for any coding agent
+├── packages/jev-kit/        # @bobobowis/jev-kit: the client, guards, file reads, agent tools, hooks, MCP server, and the jev command
 │   ├── src/core/            # types.ts (wire contract, validation, limits), client.ts (mock, OpenRouter, TypeSafe), helpers.ts, mock.ts
-│   ├── src/levels/          # level01 .. level10, one file per option plus index.ts; 6 to 10 hold the decision code the extensions import
-│   ├── src/level.ts         # the terminal runner behind just jev1 .. jev10
+│   ├── src/capabilities.ts  # which option runs how under each agent; the README tables are generated from it
+│   └── docs/                # the Claude Code and Codex contracts the hooks and drivers rely on
+├── apps/ten-levels/
+│   ├── src/core/            # re-exports the package's core
+│   ├── src/levels/          # level01 .. level10, one file per option plus index.ts; 6 to 10 re-export their decision code from the package
+│   ├── src/level.ts         # the terminal runner behind npm run level -- 1 .. 10
 │   ├── src/demo.ts          # every level, every option, printed end to end
 │   ├── extensions/          # one pi extension per agentic level, plus report.ts, the side channel every extension reports on
 │   │   ├── jev-guard.ts     # L6: tool_call and tool_result hooks
@@ -366,9 +419,10 @@ The landing page starts with every level hidden. Opening a level reveals its car
 │   │   ├── ask-jev-files.ts # L9: one call per file in parallel, then pick_first_file
 │   │   └── ask-jev.ts       # L10: one tool over state, paths, and a command
 │   ├── sandbox/             # the billing service the agents work in; one failing test on purpose
-│   ├── server/              # server.mjs (the API), scenarios.mjs (the thirty options), agent-session.mjs (one pi process per session)
+│   ├── server/              # server.mjs (the API), scenarios.mjs (the thirty options), agent-session.mjs (one agent per session), drivers/ (pi, claude, codex)
 │   ├── web/                 # the Vue lab: LevelView, LiveExample, AgentChat, RunVisual, hero-scenes, cost.ts
-│   └── tests/               # 201 offline tests on the mock, 10 live tests against real Jev
+│   └── tests/               # offline tests on the mock, 10 live tests against real Jev
+├── scripts/run.mjs          # every npm script's task, the same on Windows, macOS, and Linux
 ├── .claude/
 │   ├── commands/            # /install and /prime
 │   └── skills/hyper-jev/    # the skill you hand your agent to build with Jev
@@ -380,17 +434,26 @@ The landing page starts with every level hidden. Opening a level reveals its car
 ## Commands
 
 ```bash
-just web          # build the Vue app, free port 4399, open the browser, serve the lab
-just dev          # Vite with hot reload on 5173; needs just web running for the API
-just jev1         # one level in the terminal, jev1 through jev10
-just jev4 b       # one option of one level, a, b, or c
-just demo         # every level, every option, on the mock
-just demo-live    # the same against real Jev
-just test         # 201 offline tests, deterministic mock
-just test-live    # 10 live tests, one per level
-just heroes       # re-render the ten hero SVGs
-just lint         # oxlint on the Vue app
-just install      # the /install walkthrough in Claude Code
+npm run web             # build the Vue app, replace a lab already on port 4399, open the browser, serve
+npm run dev             # Vite with hot reload on 5173; needs npm run web running for the API
+npm run level -- 1      # one level in the terminal, 1 through 10
+npm run level -- 4 b    # one option of one level, a, b, or c
+npm run demo            # every level, every option, on the mock
+npm run demo:live       # the same against real Jev
+npm test                # the offline tests, deterministic mock
+npm run test:live       # 10 live tests, one per level
+npm run mcp -- --level 8   # the Jev tools over stdio MCP
+npm run heroes          # re-render the ten hero SVGs
+npm run lint            # oxlint on the Vue app
+npm run docs            # regenerate the capability tables in the READMEs
+```
+
+npm is the only task runner. Every command works the same in a macOS or Linux shell and in Windows PowerShell or cmd. Set `PORT` to serve the lab on another port, and `BROWSER=none` to keep `npm run web` from opening a browser.
+
+Every command is the same on Windows, macOS, and Linux: each npm script calls `scripts/run.mjs`.
+For the agentic setup walkthrough, run `/install` in Claude Code.
+
+```bash
 ```
 
 ---
@@ -398,7 +461,7 @@ just install      # the /install walkthrough in Claude Code
 ## How to run it end to end
 
 ```bash
-just web                       # http://127.0.0.1:4399 opens
+npm run web                    # http://127.0.0.1:4399 opens
 # Level 1: pick a use case, step through Set A to Set E, Run live, watch the injection score fall from 0.99 to 0.01
 # Level 4: Run live on Set C, rm -rf node_modules && npm install comes back reversible at low confidence and asks a human
 # Level 6: press Go on Set A, watch rm -rf blocked while npm test runs
@@ -416,8 +479,10 @@ Cmd+Enter runs the example or sends the prompt.
 
 - **The mock is shape, not intelligence.** Offline it decides by word overlap, so rubric wording matters more than it does live. The live suite checks what each level means. The offline suite checks contracts and decision code.
 - **Level 6 options gate one path each.** Option B turns on only the write gate, and in one live run the agent routed around it: blocked twice writing `config/.env`, it wrote the same file with a bash heredoc. Every block now tells the agent the block is final and not to work around it, and the rerun stopped at the first block. That notice is an instruction, not a control. Load all three gates together (the extension's default) and still treat them as one signal among several.
-- **The agent can read its own environment.** Its bash tool can print every variable it was given, and in one live run it did. So the lab hands pi only the shell basics, the Jev keys, the agent model's provider key, and `JEV_*` settings. Add other variable names to `JEV_AGENT_ENV` when your model or tools need them. The OpenRouter key stays visible to the agent because the session needs it, so treat `.sessions/` as sensitive.
+- **The agent can read its own environment.** Its bash tool can print every variable it was given, and in one live run it did. So the lab hands the agent only the shell basics, the Jev keys, the agent's own credentials, and `JEV_*` settings. Add other variable names to `JEV_AGENT_ENV` when your model or tools need them. The OpenRouter key stays visible to the agent because the session needs it, so treat `.sessions/` as sensitive.
 - **Context lines are tokens, not percent.** The default agent model has a million token window, so Level 7's lines default to 6k, 10k, and 14k tokens. The sandbox sets pi's keep recent tokens to 4k so compaction has material at that size.
+- **Claude Code still sees your account context.** The lab keeps your settings files, MCP servers, and plugins out of its Claude sessions, but Claude Code still adds account context, such as your email and a git status snapshot. Sessions run with permissions bypassed, confined to the throwaway sandbox copy, and the Level 6 hooks still run.
+- **Level 7 teaches less under Claude Code and Codex.** Neither lets a tool compact or a hook choose the cut point, so the advice reaches the agent on the next prompt, and under Claude Code you type `/compact` yourself. pi stays the reference for Level 7.
 - **Agents do what agents do.** Level 10 mentions ask_jev in its prompts and nudges it in the system prompt, and the agent still decides. Some runs call it once, some more. That is the point of the level, and the ledger row says what happened.
 - **A session copy is not the sandbox.** Every session works in `.sandboxes/<id>/`, a git initialized copy, so an agent that fixes the failing test never changes what the next session sees. The copies are removed on close.
 - **Level 10 gates its own command, not the agent's bash tool.** ask_jev's `command` runs through the Level 6 bash gate, so `rm -rf` is refused there. The agent's own bash tool on Level 10 is not gated.

@@ -1,0 +1,69 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: ${{ matrix.os }}, Node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ["22.18", "24"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - uses: oven-sh/setup-bun@v2
+      - run: npm install
+      - run: npm test
+      - run: npm run demo
+      - name: one level through npm (PowerShell on Windows, bash elsewhere)
+        run: npm run level -- 1 a
+      # The README's commands as written, each its own step: in PowerShell only a step's last exit code counts.
+      - run: bun install --cwd apps/ten-levels/web
+      - run: npm run lint
+      - run: npm run docs -- --check
+      - run: npm run level -- 4 b
+      - run: npm pack -w packages/jev-kit
+      - name: npm run web builds, serves the lab, and stops on request
+        shell: bash
+        env:
+          BROWSER: none
+          PORT: "4499"
+        run: |
+          npm run web > web.log 2>&1 &
+          for i in $(seq 1 180); do curl -sf http://127.0.0.1:4499/api/state > /dev/null && break; sleep 1; done
+          curl -sf http://127.0.0.1:4499/ | grep -q 'id="app"' || { cat web.log; exit 1; }
+          curl -sf -X POST -H 'x-jev-lab: shutdown' http://127.0.0.1:4499/api/shutdown
+          wait
+      - name: jev mcp answers a handshake over stdio
+        shell: bash
+        run: |
+          printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"0"}}}' '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
+            | node packages/jev-kit/dist/cli/index.js mcp --level 8 --mock > mcp.out
+          grep -q '"name":"jev"' mcp.out
+          grep -q 'ask_jev_file_bool' mcp.out
+      - name: jev hook answers a captured Claude Code payload
+        shell: bash
+        run: |
+          head -n 1 packages/jev-kit/tests/fixtures/claude/hooks.jsonl > /dev/null
+          echo '{"session_id":"ci","cwd":".","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls"}}' \
+            | JEV_EVENT_DIR=ci-events node packages/jev-kit/dist/cli/index.js hook --harness claude --event PreToolUse --mock
+          test "$?" = 0
+          ls ci-events/claude-*.jsonl
+      - name: the packed package installs and runs in an empty project
+        shell: bash
+        run: |
+          cd packages/jev-kit && npm pack --pack-destination "$RUNNER_TEMP" && cd -
+          mkdir "$RUNNER_TEMP/consumer" && cd "$RUNNER_TEMP/consumer"
+          npm init -y > /dev/null
+          npm install "$RUNNER_TEMP"/bobobowis-jev-kit-*.tgz
+          npx jev --help
+          set +e; npx jev gate "Is this a test?" --state "yes, a CI smoke test" --mock; code=$?; set -e
+          test "$code" = 0 -o "$code" = 1

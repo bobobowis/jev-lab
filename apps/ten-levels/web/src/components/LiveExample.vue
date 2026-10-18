@@ -13,6 +13,7 @@ import { visual } from "../lib/store";
 import type { StreamEvent } from "../lib/api";
 import { LEVELS } from "../lib/levels";
 import type { JevUsage } from "../lib/cost";
+import { harness, harnessLabel, harnesses, loadHarnesses, picked, supportFor } from "../lib/harness";
 
 const props = defineProps<{ n: number; option: OptionMeta; agent?: boolean }>();
 
@@ -22,6 +23,11 @@ const agentConfig = computed(() => Object.fromEntries(Object.entries(input.value
 const agentPrompt = computed(() => String(input.value.prompt ?? ""));
 const agentThen = computed(() => (typeof input.value.then === "string" ? input.value.then : undefined));
 const chat = ref<InstanceType<typeof AgentChat> | null>(null);
+/* Agent levels: the harness picker and how this option runs in the one picked. */
+const support = computed(() => supportFor(props.option));
+const blocked = computed(() => (!props.agent ? "" : !harness.value ? "No coding agent is installed. Install pi, Claude Code, or Codex to run this level."
+  : support.value.status === "unavailable" ? `Not available under ${harnessLabel(harness.value)}: ${support.value.note}.` : ""));
+const chatKey = computed(() => `${props.option.key}-${harness.value ?? "none"}`);
 /** The editor shows only the config; the prompt lives in the chat box. */
 const configModel = computed({
   get: () => agentConfig.value,
@@ -116,7 +122,7 @@ function hotkey(e: KeyboardEvent) {
     run();
   }
 }
-onMounted(() => window.addEventListener("keydown", hotkey));
+onMounted(() => { window.addEventListener("keydown", hotkey); if (props.agent) loadHarnesses(); });
 onBeforeUnmount(() => window.removeEventListener("keydown", hotkey));
 
 async function run() {
@@ -200,9 +206,24 @@ async function run() {
       </section>
 
       <section class="glass chat-panel">
-        <h3>Agent</h3>
-        <div class="meta">A real pi session in the sandbox repo. One line per thing that happens.</div>
-        <AgentChat ref="chat" :key="option.key" :n="n" :option="option.key" :config="agentConfig" :prompt="agentPrompt" :then="agentThen" />
+        <div class="agent-head">
+          <h3>Agent</h3>
+          <span class="spacer"></span>
+          <label v-if="harnesses.length" class="harness-pick">
+            <span class="meta">Harness</span>
+            <select :value="harness ?? ''" @change="picked = ($event.target as HTMLSelectElement).value">
+              <option v-for="h in harnesses" :key="h.name" :value="h.name" :disabled="!h.available">
+                {{ harnessLabel(h.name) }}{{ h.available ? (supportFor(option, h.name).status === "full" ? "" : `, ${supportFor(option, h.name).status}`) : ", not installed" }}
+              </option>
+            </select>
+          </label>
+        </div>
+        <div class="meta">A real {{ harnessLabel(harness) || "agent" }} session in the sandbox repo. One line per thing that happens.</div>
+        <div v-if="support.status !== 'full' && support.note" class="support-note" :class="support.status">
+          <b>{{ support.status === "degraded" ? `Degraded under ${harnessLabel(harness)}` : `Unavailable under ${harnessLabel(harness)}` }}:</b> {{ support.note }}.
+        </div>
+        <div v-else-if="support.note" class="meta">{{ harnessLabel(harness) }}: {{ support.note }}.</div>
+        <AgentChat ref="chat" :key="chatKey" :n="n" :option="option.key" :config="agentConfig" :prompt="agentPrompt" :then="agentThen" :harness="harness" :blocked="blocked" />
       </section>
 
       <CodeView :file="option.file" :call="option.call" :code="option.code" :input="input" />
