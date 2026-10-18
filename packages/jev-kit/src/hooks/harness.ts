@@ -4,6 +4,8 @@
  * they differ in tool names and where context usage lives.
  *
  *   PreToolUse        Bash: bash gate. Write, Edit, MultiEdit, NotebookEdit, apply_patch: write gate. Deny on block.
+ *                     mcp__*: the MCP gate, except the jev server's own tools. With a ladder, Claude Code
+ *                     also gets ask and allow; Codex only reads deny, so there they pass.
  *   PostToolUse       Read, Bash: result screen. The banner goes back as additionalContext.
  *   UserPromptSubmit  Level 7: record the request; inject a waiting tier message once.
  *   Stop              Level 7: the four questions, the tier saved for the next prompt.
@@ -11,7 +13,8 @@
  */
 import type { Decider } from "../events/index.ts";
 import type { Lines } from "../compact/should-compact.ts";
-import { ALL_GUARDS, handleHook, type Guard, type HookContext, type HookOutcome } from "./handle.ts";
+import type { Ladder } from "../guards/bash-gate.ts";
+import { LEVEL6_GUARDS, handleHook, type Guard, type HookContext, type HookOutcome } from "./handle.ts";
 import { readState, stateDir, writeState } from "./state.ts";
 import { claudeUsage, codexUsage } from "./transcript.ts";
 
@@ -23,6 +26,8 @@ export const HOOK_LINES: Lines = { notice: 50_000, recommend: 100_000, request: 
 export interface HarnessHookOptions {
   harness: Harness;
   guards?: Guard[];
+  /** When the bash and MCP gates ask or approve instead of passing. */
+  ladder?: Ladder;
   /** Run the Level 7 advisor on UserPromptSubmit and Stop. */
   compact?: boolean;
   lines?: Lines;
@@ -70,10 +75,14 @@ function resultText(tool: string, response: any): string | null {
 }
 
 const deny = (reason: string): HookResponse => ({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: reason } });
+const decision = (permissionDecision: "ask" | "allow", reason: string): HookResponse => ({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision, permissionDecisionReason: reason } });
 const context = (event: string, text: string): HookResponse => ({ hookSpecificOutput: { hookEventName: event, additionalContext: text } });
 
 export async function runHarnessHook(event: string, payload: any, opts: HarnessHookOptions): Promise<HookResponse> {
-  const ctx: HookContext = { decide: opts.decide, report: opts.report, guards: opts.guards ?? ALL_GUARDS };
+  const ctx: HookContext = { decide: opts.decide, report: opts.report, guards: opts.guards ?? LEVEL6_GUARDS, ladder: opts.ladder };
+  /** Codex hooks honor deny only; an ask or allow there passes to Codex's own approvals. */
+  const pre = (r: HookOutcome): HookResponse =>
+    r.block ? deny(r.reason!) : r.verdict && opts.harness === "claude" ? decision(r.verdict, r.reason!) : null;
   const cwd = String(payload?.cwd || process.cwd());
   const tool = String(payload?.tool_name ?? "");
   const session = String(payload?.session_id ?? "default");
@@ -82,7 +91,11 @@ export async function runHarnessHook(event: string, payload: any, opts: HarnessH
     case "PreToolUse": {
       if (tool === "Bash") {
         const r = await handleHook({ kind: "shell", tool, command: String(payload?.tool_input?.command ?? ""), cwd, hook: event }, ctx);
-        return r.block ? deny(r.reason!) : null;
+        return pre(r);
+      }
+      if (tool.startsWith("mcp__")) {
+        if (tool.startsWith("mcp__jev__")) return null; // Jev's own tools only read
+        return pre(await handleHook({ kind: "mcp-call", tool, input: payload?.tool_input, cwd, hook: event }, ctx));
       }
       const targets = writeTargets(tool, payload?.tool_input);
       if (!targets) return null;

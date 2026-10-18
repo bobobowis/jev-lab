@@ -15,7 +15,8 @@
       { "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/prompt-route.mjs\"", "timeout": 8 }] }
     ],
     "PreToolUse": [
-      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/commit-risk.mjs\"", "timeout": 15 }] }
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/commit-risk.mjs\"", "timeout": 15 }] },
+      { "matcher": "Bash|mcp__.*", "hooks": [{ "type": "command", "command": "node --env-file-if-exists=\"$CLAUDE_PROJECT_DIR/.env\" \"$CLAUDE_PROJECT_DIR/packages/jev-kit/dist/cli/index.js\" hook --harness claude --event PreToolUse --guards bash,mcp --ask --allow-read-only", "timeout": 10 }] }
     ],
     "PostToolUse": [
       { "matcher": "Write|Edit|MultiEdit|NotebookEdit", "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-edit.mjs\"", "timeout": 12 }] }

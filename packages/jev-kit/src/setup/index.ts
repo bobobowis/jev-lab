@@ -7,7 +7,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ALL_GUARDS, type Guard } from "../hooks/handle.ts";
+import { ALL_GUARDS, LEVEL6_GUARDS, type Guard } from "../hooks/handle.ts";
 import { LEVEL_TOOLS, selectTools } from "../tools/sets.ts";
 
 export type SetupHarness = "claude" | "codex";
@@ -20,6 +20,10 @@ export interface SetupOptions {
   tools?: string[];
   /** Run the Level 7 advisor hooks. */
   compact?: boolean;
+  /** The bash and MCP gates ask the user when Jev is unsure or leans destructive. Claude Code only. */
+  ask?: boolean;
+  /** The bash and MCP gates approve what Jev is sure only reads. Claude Code only. */
+  allowReadOnly?: boolean;
   /** A lab level: 6 means the guards, 7 the advisor and should_i_compact, 8 to 10 their tools. */
   level?: number;
   /** How the harness runs this package's bin. Defaults to node and its absolute path. */
@@ -56,21 +60,28 @@ const quote = (s: string) => (/^[A-Za-z0-9_./:@=,+-]+$/.test(s) ? s : JSON.strin
 const MARKER = /\shook --harness (claude|codex)(\s|$)/;
 export const isJevHookCommand = (command: unknown) => typeof command === "string" && MARKER.test(command);
 
-export interface Resolved { guards: Guard[]; tools: string[]; compact: boolean }
+export interface Resolved { guards: Guard[]; tools: string[]; compact: boolean; ask?: boolean; allowReadOnly?: boolean }
 
-export function resolveSelection(o: Pick<SetupOptions, "guards" | "tools" | "compact" | "level">): Resolved {
+type Selection = Pick<SetupOptions, "guards" | "tools" | "compact" | "level" | "ask" | "allowReadOnly"> & { harness?: SetupHarness };
+
+export function resolveSelection(o: Selection): Resolved {
   const guards = new Set<Guard>(o.guards ?? []);
   const tools = new Set<string>(o.tools ?? []);
   let compact = o.compact ?? false;
   if (o.level !== undefined) {
-    if (o.level === 6) ALL_GUARDS.forEach((g) => guards.add(g));
+    if (o.level === 6) LEVEL6_GUARDS.forEach((g) => guards.add(g));
     else if (LEVEL_TOOLS[o.level]) { LEVEL_TOOLS[o.level].forEach((t) => tools.add(t)); if (o.level === 7) compact = true; }
     else throw new SetupError(`level ${o.level} has nothing to set up; levels 6 to 10 do`);
   }
   for (const g of guards) if (!ALL_GUARDS.includes(g)) throw new SetupError(`unknown guard ${g}; known: ${ALL_GUARDS.join(", ")}`);
   try { selectTools({ names: [...tools] }); } catch (err: any) { throw new SetupError(err.message); }
   if (!guards.size && !tools.size && !compact) throw new SetupError("nothing to set up: pass --guards, --tools, --compact, or --level");
-  return { guards: [...guards], tools: [...tools], compact };
+  const ladder = o.ask || o.allowReadOnly;
+  if (ladder && !guards.has("bash") && !guards.has("mcp")) throw new SetupError("--ask and --allow-read-only apply to the bash and mcp guards; add one of them to --guards");
+  if (o.harness === "codex" && (ladder || guards.has("mcp"))) {
+    throw new SetupError("Codex hooks can only deny, so the mcp guard, --ask, and --allow-read-only are Claude Code only");
+  }
+  return { guards: [...guards], tools: [...tools], compact, ...(o.ask ? { ask: true } : {}), ...(o.allowReadOnly ? { allowReadOnly: true } : {}) };
 }
 
 interface HookGroup { matcher?: string; hooks: { type: "command"; command: string; timeout?: number }[] }
@@ -80,10 +91,13 @@ export function hookGroups(harness: SetupHarness, sel: Resolved, command: string
   const run = (event: string, flags: string[]) => ({ type: "command" as const, command: [...command, "hook", "--harness", harness, "--event", event, ...flags, ...extra].map(quote).join(" "), timeout: timeoutSec });
   const out: Record<string, HookGroup[]> = {};
   const guardFlag = (gs: Guard[]) => ["--guards", gs.join(",")];
+  const ladder = [...(sel.ask ? ["--ask"] : []), ...(sel.allowReadOnly ? ["--allow-read-only"] : [])];
   const pre: string[] = [];
   if (sel.guards.includes("bash")) pre.push("Bash");
   if (sel.guards.includes("write")) pre.push(...(harness === "codex" ? ["apply_patch"] : ["Write", "Edit", "MultiEdit", "NotebookEdit"]));
-  if (pre.length) out.PreToolUse = [{ matcher: pre.join("|"), hooks: [run("PreToolUse", guardFlag(sel.guards.filter((g) => g !== "result")))] }];
+  const preGuards = sel.guards.filter((g) => g === "bash" || g === "write");
+  if (pre.length) out.PreToolUse = [{ matcher: pre.join("|"), hooks: [run("PreToolUse", [...guardFlag(preGuards), ...(sel.guards.includes("bash") ? ladder : [])])] }];
+  if (sel.guards.includes("mcp")) (out.PreToolUse ??= []).push({ matcher: "mcp__.*", hooks: [run("PreToolUse", [...guardFlag(["mcp"]), ...ladder])] });
   if (sel.guards.includes("result")) out.PostToolUse = [{ matcher: harness === "codex" ? "Bash" : "Read|Bash", hooks: [run("PostToolUse", guardFlag(["result"]))] }];
   if (sel.compact) {
     out.UserPromptSubmit = [{ hooks: [run("UserPromptSubmit", ["--compact"])] }];
@@ -200,10 +214,12 @@ export function planCodex(o: SetupOptions): FileChange[] {
 }
 
 /** One line for people: what the selection turns on. */
-export function describeSelection(o: Pick<SetupOptions, "guards" | "tools" | "compact" | "level">): string {
+export function describeSelection(o: Selection): string {
   const sel = resolveSelection(o);
   const parts = [
     sel.guards.length ? `guards ${sel.guards.join(",")}` : "",
+    sel.ask ? "ask when unsure" : "",
+    sel.allowReadOnly ? "approve read only" : "",
     sel.compact ? "compaction advisor" : "",
     sel.tools.length ? `tools ${sel.tools.join(",")}` : "",
   ].filter(Boolean);
