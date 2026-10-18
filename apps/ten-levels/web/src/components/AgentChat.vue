@@ -255,12 +255,12 @@ const pretty = (v: unknown) => esc(typeof v === "string" ? v : JSON.stringify(v,
     </div>
 
     <div class="chat-input">
-      <textarea v-model="text" rows="3" :disabled="running || starting || !!blocked" placeholder="Prompt the agent"></textarea>
+      <textarea v-model="text" rows="3" :disabled="running || starting || !!blocked" :placeholder="then ? 'Prompt the agent, or press Then for the follow up' : 'Prompt the agent'"></textarea>
       <div class="chat-actions">
         <button v-if="then && !running" class="ghost then" :disabled="starting || !!blocked" @click="text = then">Then: {{ first(then, 70) }}</button>
         <span class="spacer"></span>
         <span v-if="error" class="chat-error">{{ error }}</span>
-        <button class="run" :class="{ stop: running }" :disabled="starting || !sessionId || !!blocked" @click="go">{{ running ? "Stop" : "Go" }} <kbd v-if="!running">⌘↵</kbd></button>
+        <button class="run" :class="{ stop: running }" :disabled="starting || !sessionId || !!blocked || (!running && !text.trim())" :title="!running && !text.trim() ? 'Type a prompt first' : ''" @click="go">{{ running ? "Stop" : "Go" }} <kbd v-if="!running">⌘↵</kbd></button>
       </div>
     </div>
 
