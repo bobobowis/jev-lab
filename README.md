@@ -383,6 +383,21 @@ jev setup --harness codex --guards bash,write --tools ask_jev                   
 
 Every command, the library by entry point, and the hook and MCP setup are in [`packages/jev-kit/README.md`](packages/jev-kit/README.md).
 
+### This repo runs on Jev too
+
+Open the repo in Claude Code and it uses Jev on its own work. `jev setup` writes the generic gates; these hooks in `.claude/hooks/` call `jev ask` for decisions specific to this repo:
+
+| Hook | When | What Jev decides |
+|---|---|---|
+| `stop-tests.mjs` | `Stop`, when `packages/`, `apps/`, or `scripts/` changed | `pnpm test` failed: did the change cause it, or the environment? Only a change sends Claude back to fix it |
+| `commit-risk.mjs` | `PreToolUse` on `git commit` | How risky the staged diff is, and whether it has tests. A risky commit asks you first |
+| `prompt-route.mjs` | `UserPromptSubmit` | Which part of the repo the prompt is about, so Claude gets where to start and that part's rules |
+| `post-edit.mjs` | `PostToolUse` on `Write` and `Edit` | Whether an edited source file imports a runtime dependency or has a hook that fails closed; also reminds you about `sync-skill` and `docs` |
+
+`.mcp.json` serves the Jev read tools, which `.claude/settings.json` allows without a prompt. `/triage <problem>` has Claude rank the files with `pick_first_file` before it opens any. `.githooks/pre-commit` blocks commits that add a live credential; turn it on once per clone with `git config core.hooksPath .githooks`.
+
+Every hook fails open and never exits 2, and they read the key from the root `.env`. Without a key they do nothing. `JEV_HOOKS_MOCK=1` points them at the mock, which only checks the wiring because its answers aren't judgments. `prompt-route` calls Jev on every prompt and `post-edit` on every source edit, a fraction of a cent each. To keep them for yourself only, move the hooks to `.claude/settings.local.json`.
+
 ---
 
 ## How the lab works
@@ -425,8 +440,12 @@ The landing page starts with every level hidden. Opening a level reveals its car
 │   └── tests/               # offline tests on the mock, 10 live tests against real Jev
 ├── scripts/run.mjs          # every pnpm script's task, the same on Windows, macOS, and Linux
 ├── .claude/
-│   ├── commands/            # /install and /prime
+│   ├── commands/            # /install, /prime, and /triage
+│   ├── hooks/               # this repo's own Jev hooks for Claude Code: tests at stop, commit risk, prompt routing, post edit checks
+│   ├── settings.json        # wires those hooks and allows the Jev MCP tools
 │   └── skills/hyper-jev/    # the skill you hand your agent to build with Jev
+├── .mcp.json                # the Jev read tools over MCP, for Claude Code in this repo
+├── .githooks/pre-commit     # blocks commits that add a credential; git config core.hooksPath .githooks
 └── images/                  # the diagrams from the video
 ```
 
