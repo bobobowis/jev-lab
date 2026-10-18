@@ -372,7 +372,7 @@ claude "/hyper-jev add a Jev urgency gate in front of our support webhook"
 
 ## Use Jev outside the lab: the package and the jev command
 
-`packages/jev-kit/` is `@bobobowis/jev-kit`: the client, the guards, the file reads, and the agent tools, with no runtime dependencies. It also ships `jev`, a command for scripts, CI, git hooks, and coding agents. It is not on npm yet; `pnpm --filter @bobobowis/jev-kit pack` makes a tarball you can install anywhere. `jev` reads `TYPESAFE_API_KEY` or `OPENROUTER_API_KEY` from the environment; the root `.env` is loaded only by the npm scripts.
+`packages/jev-kit/` is `@bobobowis/jev-kit`: the client, the guards, the file reads, and the agent tools, with no runtime dependencies. It also ships `jev`, a command for scripts, CI, git hooks, and coding agents. Install it with `npm install @bobobowis/jev-kit`, or run it without installing as `npx @bobobowis/jev-kit <command>`. `jev` reads `TYPESAFE_API_KEY` or `OPENROUTER_API_KEY` from the environment; the root `.env` is loaded only by the npm scripts.
 
 ```bash
 jev gate "Is this ticket about billing?" --state "I was charged twice this month" && echo billing   # the exit code is the answer

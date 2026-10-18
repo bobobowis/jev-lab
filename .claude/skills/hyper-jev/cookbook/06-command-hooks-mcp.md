@@ -2,8 +2,8 @@
 
 Some decisions don't need a module in the user's backend. A script, a CI step, a git hook, or a
 coding agent can call Jev through `jev`, the command in `@bobobowis/jev-kit`, the package this
-skill's core is synced from. It is not on npm yet: pack it from the ten-levels repository
-(`pnpm --filter @bobobowis/jev-kit pack`) and install the tarball. It reads `TYPESAFE_API_KEY` or
+skill's core is synced from. Install it with `npm install @bobobowis/jev-kit`, or run it without
+installing as `npx @bobobowis/jev-kit <command>`. It reads `TYPESAFE_API_KEY` or
 `OPENROUTER_API_KEY`, and `--mock` runs offline.
 
 ## Pick the delivery

@@ -39,10 +39,17 @@ export interface FileChange {
 
 export class SetupError extends Error {}
 
-/** The bin this module ships with: dist/cli/index.js next to dist/setup/. */
-export const defaultCommand = (): string[] => {
-  const ext = import.meta.url.endsWith(".ts") ? "ts" : "js"; // run from source in this repo, from dist when installed
-  return [process.execPath, fileURLToPath(new URL(`../cli/index.${ext}`, import.meta.url))];
+/** npx and pnpm dlx unpack into a cache they may clear, so a path into one would stop working. */
+const EPHEMERAL = /[\\/](_npx|dlx)[\\/]/;
+
+/**
+ * The bin this module ships with: dist/cli/index.js next to dist/setup/. Run through npx or
+ * pnpm dlx, it is `npx -y` on this exact version instead, which outlives the cache.
+ */
+export const defaultCommand = (bin = fileURLToPath(new URL(`../cli/index.${import.meta.url.endsWith(".ts") ? "ts" : "js"}`, import.meta.url))): string[] => {
+  if (!EPHEMERAL.test(bin)) return [process.execPath, bin];
+  const pkg = JSON.parse(readFileSync(resolve(dirname(bin), "../../package.json"), "utf8"));
+  return ["npx", "-y", `${pkg.name}@${pkg.version}`];
 };
 
 const quote = (s: string) => (/^[A-Za-z0-9_./:@=,+-]+$/.test(s) ? s : JSON.stringify(s));

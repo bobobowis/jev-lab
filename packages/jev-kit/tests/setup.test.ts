@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Readable } from "node:stream";
-import { isJevHookCommand, plan, apply, SetupError } from "../src/setup/index.ts";
+import { defaultCommand, isJevHookCommand, plan, apply, SetupError } from "../src/setup/index.ts";
 import { main } from "../src/cli/main.ts";
 
 const CMD = ["node", "/opt/jev/dist/cli/index.js"];
@@ -126,4 +126,16 @@ test("codex: a broken block or a foreign [mcp_servers.jev] is refused, nothing w
   assert.throws(() => plan({ harness: "codex", dir, guards: ["bash"], command: CMD }), /broken jev setup block/);
   writeFileSync(join(dir, ".codex/config.toml"), "[mcp_servers.jev]\ncommand = \"other\"\n");
   assert.throws(() => plan({ harness: "codex", dir, tools: ["ask_jev"], command: CMD }), /already defines \[mcp_servers\.jev\]/);
+});
+
+test("default command: node and the bin when installed, npx on the exact version from an npx or dlx cache", () => {
+  assert.deepEqual(defaultCommand("/work/node_modules/@bobobowis/jev-kit/dist/cli/index.js"), [process.execPath, "/work/node_modules/@bobobowis/jev-kit/dist/cli/index.js"]);
+  for (const cache of ["_npx/3f2a", "dlx/9c1b"]) {
+    const root = join(project(), cache, "node_modules/@bobobowis/jev-kit");
+    mkdirSync(join(root, "dist/cli"), { recursive: true });
+    writeFileSync(join(root, "package.json"), JSON.stringify({ name: "@bobobowis/jev-kit", version: "1.2.3" }));
+    const command = defaultCommand(join(root, "dist/cli/index.js"));
+    assert.deepEqual(command, ["npx", "-y", "@bobobowis/jev-kit@1.2.3"]);
+    assert.ok(isJevHookCommand(`${command.join(" ")} hook --harness claude --event Stop`));
+  }
 });
