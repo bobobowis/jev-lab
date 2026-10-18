@@ -72,7 +72,7 @@
 
 ## 12. Integration checks
 
-- [ ] 12.1 On Windows (native PowerShell), run `npm install`, `npm test`, `npm run demo`, `npm run web`, and one Level 6 and one Level 8 session under Claude Code. Record the results in the PR description.
+- [x] 12.1 On Windows (native PowerShell), run `npm install`, `npm test`, `npm run demo`, `npm run web`, and one Level 6 and one Level 8 session under Claude Code. Record the results in the PR description.
 - [ ] 12.2 Under WSL and on macOS, run each of Levels 6–10 option A in the lab under Claude Code and Codex, and confirm the behavior matches the matrix. Record any mismatch as a matrix fix.
 - [ ] 12.3 With pi installed, run Levels 6–10 option A to confirm there's no regression from the adapter refactor (`compact_now` and the cut point still work).
 - [x] 12.4 In a project outside this repo, install the packed tarball, run `jev setup --harness claude --guards bash,write --tools ask_jev`, and confirm in a plain Claude Code session that a force push is denied and `mcp__jev__ask_jev` answers. Record the result in the PR description.
