@@ -45,7 +45,7 @@ Levels 1 to 5 need no agent. Levels 6 to 10 run in the lab under whichever of th
 
 | Harness | Install | Credentials | Default model |
 |---|---|---|---|
-| pi 0.85.1+ | `npm install -g @earendil-works/pi-coding-agent` | `OPENROUTER_API_KEY` | `openrouter/google/gemini-3.8-flash` |
+| pi 0.85.1+ | `npm install -g @earendil-works/pi-coding-agent` | `OPENROUTER_API_KEY` for the default model, or the key of the provider in `JEV_AGENT_MODEL` | `openrouter/google/gemini-3.8-flash` |
 | Claude Code 2.1.302+ | `npm install -g @anthropic-ai/claude-code` | your `claude` login, or `ANTHROPIC_API_KEY` | `claude-haiku-5-5` |
 | Codex 0.162+ | `npm install -g @openai/codex` | your `codex login`, or `OPENAI_API_KEY` | the account default |
 

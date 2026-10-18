@@ -10,9 +10,9 @@ export const name = "pi";
 export const command = "pi";
 export const defaultModel = "openrouter/google/gemini-3.8-flash";
 
-/** pi reads the model's provider key: openrouter/... needs OPENROUTER_API_KEY. The pi extensions call Jev through OpenRouter. */
+/** pi reads the model's provider key: openrouter/... needs OPENROUTER_API_KEY. The extensions call Jev with whichever Jev key is set. */
 export function credentialEnv(model) {
-  return { names: [`${model.split("/")[0].toUpperCase().replace(/[^A-Z0-9]/g, "_")}_API_KEY`], prefixes: [], set: { JEV_BACKEND: "openrouter" } };
+  return { names: [`${model.split("/")[0].toUpperCase().replace(/[^A-Z0-9]/g, "_")}_API_KEY`], prefixes: [], set: {} };
 }
 
 export function create({ extension, tools, model, sessionsDir }) {

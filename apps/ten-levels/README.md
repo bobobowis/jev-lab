@@ -47,7 +47,7 @@ overridden with `JEV_AGENT_MODEL`:
 
 | Agent | Signs in with | Default model |
 |---|---|---|
-| pi 0.85.1+ | `OPENROUTER_API_KEY` | `openrouter/google/gemini-3.8-flash` |
+| pi 0.85.1+ | `OPENROUTER_API_KEY` for the default model, or the key of the provider in `JEV_AGENT_MODEL` | `openrouter/google/gemini-3.8-flash` |
 | Claude Code 2.1.302+ | your `claude` login, or `ANTHROPIC_API_KEY` | `claude-haiku-5-5` |
 | Codex 0.162+ | your `codex login`, or `OPENAI_API_KEY` | your account's default |
 

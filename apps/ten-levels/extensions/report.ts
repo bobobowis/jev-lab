@@ -13,8 +13,8 @@ import { createDecider, createReporter, type Decision, type Reporter } from "@bo
 import type { CompactionSource, JevTool, ToolContext, ToolResult } from "@bobobowis/jev-kit/tools";
 
 let client: JevClient | undefined;
-/** OpenRouter, as the lab is set up; JEV_BACKEND=mock selects the offline mock explicitly. */
-export const jev = () => (client ??= new JevClient({ provider: process.env.JEV_BACKEND?.trim() === "mock" ? "mock" : "openrouter" }));
+/** TypeSafe or OpenRouter, whichever key is set (TypeSafe first), like the rest of the lab; JEV_BACKEND picks one, or mock. */
+export const jev = () => (client ??= new JevClient());
 
 /** The level config the lab passed in, JEV_LEVEL_CONFIG as JSON. */
 export function levelConfig<T extends object>(fallback: T): T {
