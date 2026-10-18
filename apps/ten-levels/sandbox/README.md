@@ -2,13 +2,13 @@
 
 A small service the lab's agents work in: sessions and tokens under `src/auth`, storage under
 `src/db`, HTTP handlers under `src/http`, and pure billing rules under `src/domain`. Tests run with
-`npm test`. One test fails on purpose: proration in `src/domain/billing.ts` rounds the wrong way.
+`pnpm test`. One test fails on purpose: proration in `src/domain/billing.ts` rounds the wrong way.
 
 ## Run it by hand with Claude Code or Codex
 
 The lab copies this folder for every agent session and wires Jev in for you. You can do the same
 yourself, without the lab, with `jev setup` from `@bobobowis/jev-kit`. From the repo root, after
-`npm install`:
+`pnpm install`:
 
 ```bash
 cp -r apps/ten-levels/sandbox /tmp/jev-sandbox

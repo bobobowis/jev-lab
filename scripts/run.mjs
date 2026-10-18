@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Every recipe as a named task, so npm and a bare terminal run the same thing on Windows,
- * macOS, and Linux. No shell: node runs as process.execPath, tsc through its JS entry, bun as an
- * executable. Node children load the repo's .env with --env-file-if-exists.
+ * Every recipe as a named task, so pnpm and a bare terminal run the same thing on Windows,
+ * macOS, and Linux. No shell: node runs as process.execPath, tsc, vite, and oxlint through their JS
+ * entries. Node children load the repo's .env with --env-file-if-exists.
  *
  *   node scripts/run.mjs <task> [args]
  *   tasks: build, level <n> [a|b|c], demo, demo-live, test, test-live, web, dev, lint, heroes, mcp [args], sync-skill, docs [--check]
@@ -16,6 +16,7 @@ if (major < REQUIRED[0] || (major === REQUIRED[0] && minor < REQUIRED[1])) {
 
 const { spawn } = await import("node:child_process");
 const { createRequire } = await import("node:module");
+const { readFileSync } = await import("node:fs");
 const { dirname, join } = await import("node:path");
 const { fileURLToPath } = await import("node:url");
 
@@ -40,7 +41,18 @@ function run(command, args, { cwd = ROOT, env = {} } = {}) {
   return Object.assign(done, { child });
 }
 const node = (args, opts) => run(process.execPath, args, opts);
-const bun = (args) => run("bun", args, { cwd: WEB });
+/** Run a CLI from the Vue lab's node_modules (installed by pnpm install) through node, by its package.json bin. */
+const webBin = (pkg, args) => {
+  const dir = join(WEB, "node_modules", pkg);
+  let bin;
+  try {
+    bin = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")).bin;
+  } catch {
+    console.error(`run: ${pkg} is not installed in apps/ten-levels/web. Run pnpm install at the repo root.`);
+    return Promise.resolve(127);
+  }
+  return node([join(dir, typeof bin === "string" ? bin : bin[pkg]), ...args], { cwd: WEB });
+};
 const tsc = (args) => node([require.resolve("typescript/bin/tsc"), ...args], { cwd: KIT });
 const build = () => tsc(["-b", "tsconfig.build.json"]);
 
@@ -106,22 +118,23 @@ const tasks = {
     () => node(["--test", "tests/**/*.test.ts"], { cwd: APP }),
   ),
   "test-live": () => steps(build, () => node([ENV_FILE, "--test", "tests/live.test.ts"], { cwd: APP, env: { JEV_LIVE: "1" } })),
-  web: () => steps(build, () => bun(["run", "build"]), freePort, serveAndOpen),
+  web: () => steps(build, () => webBin("vite", ["build"]), freePort, serveAndOpen),
   dev: async () => {
     const watch = tsc(["-b", "tsconfig.build.json", "--watch", "--preserveWatchOutput"]);
-    const code = await bun(["run", "dev"]);
+    const code = await webBin("vite", []);
     watch.child.kill(); // Vite is gone, so the package watch has no one to build for
     await watch;
     return code;
   },
-  lint: () => bun(["run", "lint"]),
-  heroes: () => bun(["run", "heroes"]),
+  lint: () => webBin("oxlint", ["src"]),
+  heroes: () => node(["scripts/build-heroes.mjs"], { cwd: WEB }),
   mcp: (...args) => steps(build, () => node([ENV_FILE, join(KIT, "dist", "cli", "index.js"), "mcp", ...args], { cwd: APP })),
   "sync-skill": () => node([join(ROOT, "scripts", "sync-skill-core.mjs")]),
   docs: (...args) => steps(build, () => node([join(ROOT, "scripts", "docs.mjs"), ...args])),
 };
 
-const [name, ...args] = process.argv.slice(2);
+// pnpm passes a `--` through to the script (`pnpm run level -- 4 b`); drop it.
+const [name, ...args] = process.argv.slice(2).filter((a, i) => !(i === 1 && a === "--"));
 if (!name || !tasks[name]) {
   console.error(`Usage: node scripts/run.mjs <task> [args]\nTasks: ${Object.keys(tasks).join(", ")}`);
   process.exit(name ? 2 : 0);

@@ -5,15 +5,15 @@ A backend-only Jev integration with the original core, thirty examples, and offl
 ## Run offline
 
 ```sh
-npm test
-npm run demo
+pnpm test
+pnpm run demo
 ```
 
 Both commands explicitly select the deterministic mock. No credentials, install, or network are needed. The mock tests contract shape and wiring, not semantic accuracy.
 
 ## Run live when authorized
 
-Inject `TYPESAFE_API_KEY` or `OPENROUTER_API_KEY` into the process environment, then run `npm start`. If using a private local `.env`, run `node --env-file=.env src/example.ts`. The client does not load files itself.
+Inject `TYPESAFE_API_KEY` or `OPENROUTER_API_KEY` into the process environment, then run `pnpm start`. If using a private local `.env`, run `node --env-file=.env src/example.ts`. The client does not load files itself.
 
 TypeSafe wins when both keys exist. OpenRouter is used only when the TypeSafe key is absent. Selection and credentials are fixed at client construction. Missing keys cause an error. `JEV_BACKEND` or constructor options can override selection explicitly. A failed request never switches providers.
 
@@ -35,8 +35,8 @@ For an existing backend, copy the core and only the needed decision module. Inje
 Runtime tests need no packages. For TypeScript checking:
 
 ```sh
-npm install
-npm run typecheck
+pnpm install
+pnpm run typecheck
 ```
 
 Commit the generated lockfile in your destination application. This template intentionally has no installed dependencies or lockfile tied to the source repository.

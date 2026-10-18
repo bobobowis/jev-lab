@@ -57,7 +57,7 @@ test("translator: the captured runs become tool rows named as Codex names them, 
 test("plainCommand strips the shell wrapper Codex shows", () => {
   assert.equal(plainCommand("/bin/bash -lc 'cat math.ts'"), "cat math.ts");
   assert.equal(plainCommand("/bin/bash -lc ls"), "ls");
-  assert.equal(plainCommand("npm test"), "npm test");
+  assert.equal(plainCommand("pnpm test"), "pnpm test");
   assert.equal(plainCommand(`/bin/bash -lc "pwd; rg --files -g 'AGENTS.md'"`), "pwd; rg --files -g 'AGENTS.md'");
   assert.equal(plainCommand(`/bin/bash -lc "echo \\"hi\\""`), 'echo "hi"');
 });

@@ -33,7 +33,7 @@ The package SHALL produce an installable tarball containing only built JavaScrip
 
 #### Scenario: Install from the tarball
 - **WHEN** the packed tarball is installed into an empty temporary project on Windows, macOS, or Linux
-- **THEN** `npx jev --help` prints the subcommands and `jev gate --mock` runs
+- **THEN** `pnpm exec jev --help` prints the subcommands and `jev gate --mock` runs
 
 ### Requirement: The lab uses the package
 The lab SHALL import every Jev utility it shares with the package from the package, not from a copy. Existing lab import paths for the core and shared level helpers SHALL keep working, and the lab's offline tests SHALL pass unchanged.

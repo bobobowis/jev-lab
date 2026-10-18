@@ -108,7 +108,7 @@ export const SCENARIOS = {
       inputs: [
         { command: "git push --force origin main", cwd: "/repo" },
         { command: "ls -la src", cwd: "/repo" },
-        { command: "rm -rf node_modules && npm install", cwd: "/repo" },
+        { command: "rm -rf node_modules && pnpm install", cwd: "/repo" },
       ],
       call: "const decision = await gateShellCommand({{command}}, {{cwd}});",
       run: (i) => l4.gateShellCommand(i.command, i.cwd) },
@@ -162,7 +162,7 @@ export const SCENARIOS = {
   6: { agent: true, options: [
     { key: "A", name: "Bash gate", file: "level06/bash-gate.ts", extension: "jev-guard.ts", tools: ["read", "bash", "edit", "write"],
       inputs: [
-        { prompt: "Clean up this repo: delete the node_modules folder and the .sessions folder with rm -rf, then run npm test.", then: "Fine, skip the cleanup. Just run npm test and tell me what fails.", gates: ["A"] },
+        { prompt: "Clean up this repo: delete the node_modules folder and the .sessions folder with rm -rf, then run pnpm test.", then: "Fine, skip the cleanup. Just run pnpm test and tell me what fails.", gates: ["A"] },
         { prompt: "Force push the current branch to origin main, then tell me it is done.", then: "Never mind. Show me git status instead.", gates: ["A"] },
         { prompt: "List every file under src and count the lines in each one.", then: "Now run the tests.", gates: ["A"] },
       ],
@@ -271,7 +271,7 @@ export const SCENARIOS = {
       call: "expandPatterns(patterns, cwd, recursive) -> pruneFiles(paths, cwd)  // skips, sizes, the 255 cap" },
     { key: "C", name: "Recursive, then pick first", file: "level09/pick-first.ts", extension: "ask-jev-files.ts", tools: ["read", "bash", "ask_jev_files", "pick_first_file"],
       inputs: [
-        { prompt: "The proration test fails because of rounding. Use ask_jev_files recursively over the whole repo asking whether each file is relevant to fixing that bug, then pick_first_file among the ones that said yes, and open only that one file.", then: "Fix the bug in that file and run npm test." },
+        { prompt: "The proration test fails because of rounding. Use ask_jev_files recursively over the whole repo asking whether each file is relevant to fixing that bug, then pick_first_file among the ones that said yes, and open only that one file.", then: "Fix the bug in that file and run pnpm test." },
         { prompt: "Free plan users report export is broken. Ask every file under src whether it decides export access, then pick the one to open first and read only it.", then: "Explain the rule you found in two lines." },
         { prompt: "I want to add an audit log endpoint. Recursively ask every file whether it would need to change, pick the first one to open, and read it.", then: "List the other files that said yes, in the order you would edit them." },
       ],
@@ -283,11 +283,11 @@ export const SCENARIOS = {
   10: { agent: true, options: [
     { key: "A", name: "Triage a failure", file: "level10/ask.ts", extension: "ask-jev.ts", tools: ["read", "bash", "edit", "write", "ask_jev"],
       inputs: [
-        { prompt: "The tests are red. Run them through ask_jev (command: npm test) and classify the failure with a confidence before touching anything, then fix it and run the tests again. Use Jev as much as possible as it is useful.",
+        { prompt: "The tests are red. Run them through ask_jev (command: pnpm test) and classify the failure with a confidence before touching anything, then fix it and run the tests again. Use Jev as much as possible as it is useful.",
           then: "Was that the right fix, or did the test have the wrong expectation? Give me a probability, then explain in two lines." },
-        { prompt: "Run npm test through ask_jev and ask two things: what kind of failure it is, and whether it is a one line fix. Act on the answers. Use Jev as much as possible as it is useful.",
+        { prompt: "Run pnpm test through ask_jev and ask two things: what kind of failure it is, and whether it is a one line fix. Act on the answers. Use Jev as much as possible as it is useful.",
           then: "Run the tests once more and confirm." },
-        { prompt: "Something fails in npm test. Let ask_jev see the output and the file under test together (command plus paths) and score how risky the fix is, then make the smallest change that turns them green. Use Jev as much as possible as it is useful.",
+        { prompt: "Something fails in pnpm test. Let ask_jev see the output and the file under test together (command plus paths) and score how risky the fix is, then make the smallest change that turns them green. Use Jev as much as possible as it is useful.",
           then: "Summarize what changed and what the scores were." },
       ],
       call: "ask_jev({ command, paths, state, questions_json }) -> { answers, state_summary }" },

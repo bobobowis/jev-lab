@@ -34,14 +34,14 @@ console.log({ proposedRoute: decision });
 
 ```bash
 JEV_BACKEND=mock node example.ts
-npm test
+pnpm test
 ```
 
 ## Boundaries and tests
 
 [Existing tests](../../templates/starter/tests/level10.test.ts) cover key normalization/collisions, option cap, gate bands, force-push/read classifications, changing option sets, routing, and derived review risks. Add all-empty options, invalid instructions, normalization-to-ID mapping, exact thresholds, negative/nonfinite diff counts, and untrusted target descriptions.
 
-The bundled fixes are covered by [starter regression tests](../../templates/starter/tests/starter-regressions.test.ts), included in `npm test`:
+The bundled fixes are covered by [starter regression tests](../../templates/starter/tests/starter-regressions.test.ts), included in `pnpm test`:
 
 - An ambiguous command with a confident read-only classification returns `gate: "human"`, `run: false`, and `requiresConfirmation: true`. Escalation is resolved before both execution-related flags.
 - Review-class and effort instructions reference the supplied `diff_shape`; the review-class question also references `commit_message` and `touched_paths`. The regression asserts the `diff_shape` references in both questions. This checks field alignment, not live semantic accuracy.

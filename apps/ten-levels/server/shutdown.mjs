@@ -1,5 +1,5 @@
 /**
- * POST /api/shutdown lets a new `npm run web` replace the lab already holding the port, instead of
+ * POST /api/shutdown lets a new `pnpm run web` replace the lab already holding the port, instead of
  * killing whatever listens there. Only from this machine, and only with the lab's own header: a
  * page in the browser cannot send a custom header cross-origin without a preflight, which this
  * server never answers, so no website can stop the lab.

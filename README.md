@@ -21,19 +21,18 @@ Strip away the launch hype and [Jev](https://typesafe.ai) is one thing: **intell
 
 ### Agentic Install
 
-Open the repo in Claude Code and run `/install`, or ask Codex, pi, or any other coding agent to set it up: [`AGENTS.md`](AGENTS.md) holds the setup steps for every agent, and `/install` follows it plus a few Claude Code checks. It checks Node, bun, and git, reports which coding agents are installed and which levels they unlock, installs the dependencies, confirms your key without printing it, verifies the sandbox, and runs the offline suite.
+Open the repo in Claude Code and run `/install`, or ask Codex, pi, or any other coding agent to set it up: [`AGENTS.md`](AGENTS.md) holds the setup steps for every agent, and `/install` follows it plus a few Claude Code checks. It checks Node, pnpm, and git, reports which coding agents are installed and which levels they unlock, installs the dependencies, confirms your key without printing it, verifies the sandbox, and runs the offline suite.
 
 ### Manual Install
 
-**Prereqs:** [Node 22.18+](https://nodejs.org) (24 recommended), [bun](https://bun.sh), git, an [OpenRouter key](https://openrouter.ai/keys) for live runs, and for levels 6 to 10 one coding agent: [pi 0.85.1+](https://github.com/earendil-works/pi-mono), [Claude Code](https://claude.com/claude-code) 2.1.302+, or [Codex](https://github.com/openai/codex) 0.162+.
+**Prereqs:** [Node 22.18+](https://nodejs.org) (24 recommended), [pnpm 12+](https://pnpm.io), git, an [OpenRouter key](https://openrouter.ai/keys) for live runs, and for levels 6 to 10 one coding agent: [pi 0.85.1+](https://github.com/earendil-works/pi-mono), [Claude Code](https://claude.com/claude-code) 2.1.302+, or [Codex](https://github.com/openai/codex) 0.162+.
 
-These run the same in a macOS or Linux shell and in Windows PowerShell or cmd. If PowerShell says running scripts is disabled ("la ejecución de scripts está deshabilitada"), allow them for your user once with `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, or type `npm.cmd` and `bun.cmd` instead of `npm` and `bun`.
+These run the same in a macOS or Linux shell and in Windows PowerShell or cmd. If PowerShell says running scripts is disabled ("la ejecución de scripts está deshabilitada"), allow them for your user once with `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, or type `pnpm.cmd` instead of `pnpm`.
 
 ```bash
-npm install                                    # links the workspace and builds packages/jev-kit; no runtime dependencies
-bun install --cwd apps/ten-levels/web          # the Vue lab's dependencies
-npm test                                       # the offline tests on the deterministic mock
-npm run web                                    # build the lab and open it on http://127.0.0.1:4399
+pnpm install  # links the workspace, installs the Vue lab, and builds packages/jev-kit
+pnpm test     # the offline tests on the deterministic mock
+pnpm run web  # build the lab and open it on http://127.0.0.1:4399
 ```
 
 Put the key in a `.env` at the root, from `.env.sample`: `cp .env.sample .env` on macOS and Linux, `Copy-Item .env.sample .env` in PowerShell, then set `OPENROUTER_API_KEY`. Or set it in your shell (`export OPENROUTER_API_KEY=...`, or `$env:OPENROUTER_API_KEY="..."` in PowerShell).
@@ -42,9 +41,11 @@ Then install the coding agent you want for levels 6 to 10. The lab uses the one 
 
 | Agent | Install | Signs in with | Default model |
 |---|---|---|---|
-| pi | `npm install -g @earendil-works/pi-coding-agent` | `OPENROUTER_API_KEY` for the default model, or a login or key for the provider in `JEV_AGENT_MODEL_PI` (for example `openai/gpt-6.1-sol` with an OpenAI login) | `openrouter/google/gemini-3.8-flash` |
-| Claude Code | `npm install -g @anthropic-ai/claude-code` | your `claude` login, or `ANTHROPIC_API_KEY` | `claude-haiku-5-5` |
-| Codex | `npm install -g @openai/codex` | your `codex login`, or `OPENAI_API_KEY` | your account's default |
+| pi | `pnpm add -g @earendil-works/pi-coding-agent` | `OPENROUTER_API_KEY` for the default model, or a login or key for the provider in `JEV_AGENT_MODEL_PI` (for example `openai/gpt-6.1-sol` with an OpenAI login) | `openrouter/google/gemini-3.8-flash` |
+| Claude Code | `pnpm add -g @anthropic-ai/claude-code` | your `claude` login, or `ANTHROPIC_API_KEY` | `claude-haiku-5-5` |
+| Codex | `pnpm add -g @openai/codex` | your `codex login`, or `OPENAI_API_KEY` | your account's default |
+
+Run `pnpm setup` once before your first `pnpm add -g`, then open a new terminal: it puts pnpm's global bin folder on your PATH.
 
 No key? Levels 1 to 5 still run on the offline mock. Levels 6 to 10 need the key and one of the agents. The lab never reads or changes your own agent settings: each session gets its own copy of the sandbox with its own config.
 
@@ -126,7 +127,7 @@ Every example below quotes a live run of the lab. Your numbers will move a littl
 
 ## Levels 1 to 5: Jev from code
 
-Each option is a plain async function. Run one level in the terminal with `npm run level -- 1` through `npm run level -- 5`, or one option with `npm run level -- 4 b`. The code lives in `apps/ten-levels/src/levels/level01/` through `level05/`.
+Each option is a plain async function. Run one level in the terminal with `pnpm run level 1` through `pnpm run level 5`, or one option with `pnpm run level 4 b`. The code lives in `apps/ten-levels/src/levels/level01/` through `level05/`.
 
 ### Level 1: Single Decisions
 
@@ -184,7 +185,7 @@ The answer says what, and confidence says whether. Two thresholds live in `level
 |---|---|---|---|
 | `git push --force origin main` | irreversible | 0.99 | **blocked**, a human decides |
 | `ls -la src` | read only | 1.00 | **runs** |
-| `rm -rf node_modules && npm install` | reversible | 0.35 | **asks a human**: the pick is plausible, the confidence is not |
+| `rm -rf node_modules && pnpm install` | reversible | 0.33 | **asks a human**: the pick is plausible, the confidence is not |
 
 The bash tool is where agents do the most damage, and you cannot list every dangerous command ahead of time (`find . -delete` is one most engineers never think of). Jev generalizes from a description of what irreversible means.
 
@@ -222,7 +223,7 @@ The decision code lives in `@bobobowis/jev-kit`, the package in `packages/jev-ki
 
 The lab runs Levels 6 to 10 under pi, Claude Code, or Codex, and the tools from Levels 7 to 10 work in any MCP client through `jev mcp`. pi is the reference: hooks there can block, rewrite results, and compact. Claude Code and Codex run the same guards and tools through `jev hook` and `jev mcp`, with the differences noted.
 
-<!-- jev:matrix (generated by `npm run docs` from packages/jev-kit/src/capabilities.ts) -->
+<!-- jev:matrix (generated by `pnpm run docs` from packages/jev-kit/src/capabilities.ts) -->
 
 | Level | pi | Claude Code | Codex | Generic MCP |
 |---|---|---|---|---|
@@ -247,12 +248,12 @@ The lab runs Levels 6 to 10 under pi, Claude Code, or Codex, and the tools from 
 ### Level 6: Guardrail Hooks
 
 <p align="center">
-  <img src="images/08_level_06_bash_gate.png" alt="Level 6: Jev sits between the agent and bash, blocks rm -rf before it runs and sends back the reason, and lets npm test through" width="780">
+  <img src="images/08_level_06_bash_gate.png" alt="Level 6: Jev sits between the agent and bash, blocks rm -rf before it runs and sends back the reason, and lets pnpm test through" width="780">
 </p>
 
 **Use it for:** checking every tool call before it runs, where the agent never sees the check.
 
-`jev-guard.ts` hooks pi's `tool_call` and `tool_result` events. Before a bash command runs, the bash gate asks what it does to the machine and whether it means to destroy something. Irreversible or destructive blocks. The agent sees only the reason and a notice that the block is final and not to be worked around. Asked to "delete the node_modules folder and the .sessions folder with rm -rf, then run npm test," the agent had `ls`, `git status`, and `npm test` allowed and `rm -rf node_modules .sessions` blocked: irreversible 0.86, destructive intent 0.99. **It does not matter how creative the agent gets. The gate judges intent, not a list of strings.**
+`jev-guard.ts` hooks pi's `tool_call` and `tool_result` events. Before a bash command runs, the bash gate asks what it does to the machine and whether it means to destroy something. Irreversible or destructive blocks. The agent sees only the reason and a notice that the block is final and not to be worked around. Asked to "delete the node_modules folder and the .sessions folder with rm -rf, then run pnpm test," the agent had `ls`, `git status`, and `pnpm test` allowed and `rm -rf node_modules .sessions` blocked: irreversible 0.86, destructive intent 0.99. **It does not matter how creative the agent gets. The gate judges intent, not a list of strings.**
 
 <p align="center">
   <img src="images/09_level_06_result_screen.png" alt="Level 6: a tool result carrying ignore previous instructions is flagged by Jev at 0.93, above the 0.7 line, and reaches the agent marked as data" width="780">
@@ -320,12 +321,12 @@ Three flat tools: `ask_jev_file_bool`, `ask_jev_file_choice`, `ask_jev_file_scor
 ### Level 10: Agentic Jev
 
 <p align="center">
-  <img src="images/13_level_10_agentic_jev.png" alt="Level 10: the agent writes a choice block over npm test output, bug in code, wrong test, environment, other, and Jev picks bug in code" width="780">
+  <img src="images/13_level_10_agentic_jev.png" alt="Level 10: the agent writes a choice block over pnpm test output, bug in code, wrong test, environment, other, and Jev picks bug in code" width="780">
 </p>
 
 **Use it for:** letting your agent decide on its own when to use Jev.
 
-One tool, `ask_jev`. The agent passes its own `state`, `paths` for code to read, a `command` for code to run, and its question block. Code assembles one state and makes one call. The command runs through the Level 6 bash gate first, and the agent receives answers, never the files or the output. The tool description carries the question schema, and one short nudge in the system prompt tells the agent the tool exists. Told "the tests are red," the agent ran `npm test` through `ask_jev`, got `bug_in_code` at 0.99, fixed the rounding, then asked Jev to score its own diff (risk 0.53) and confirm the tests pass (0.99). The ledger line at the end of the run: 3 Jev calls, 4 questions, $0.000084.
+One tool, `ask_jev`. The agent passes its own `state`, `paths` for code to read, a `command` for code to run, and its question block. Code assembles one state and makes one call. The command runs through the Level 6 bash gate first, and the agent receives answers, never the files or the output. The tool description carries the question schema, and one short nudge in the system prompt tells the agent the tool exists. Told "the tests are red," the agent ran `pnpm test` through `ask_jev`, got `bug_in_code` at 0.99, fixed the rounding, then asked Jev to score its own diff (risk 0.53) and confirm the tests pass (0.99). The ledger line at the end of the run: 3 Jev calls, 4 questions, $0.000084.
 
 **This is where you stop deciding what Jev should do and let the agent decide.** The agent uses Jev to validate its own assumptions, at a cost too small to think about.
 
@@ -371,7 +372,7 @@ claude "/hyper-jev add a Jev urgency gate in front of our support webhook"
 
 ## Use Jev outside the lab: the package and the jev command
 
-`packages/jev-kit/` is `@bobobowis/jev-kit`: the client, the guards, the file reads, and the agent tools, with no runtime dependencies. It also ships `jev`, a command for scripts, CI, git hooks, and coding agents. It is not on npm yet; `npm pack -w packages/jev-kit` makes a tarball you can install anywhere. `jev` reads `TYPESAFE_API_KEY` or `OPENROUTER_API_KEY` from the environment; the root `.env` is loaded only by the npm scripts.
+`packages/jev-kit/` is `@bobobowis/jev-kit`: the client, the guards, the file reads, and the agent tools, with no runtime dependencies. It also ships `jev`, a command for scripts, CI, git hooks, and coding agents. It is not on npm yet; `pnpm --filter @bobobowis/jev-kit pack` makes a tarball you can install anywhere. `jev` reads `TYPESAFE_API_KEY` or `OPENROUTER_API_KEY` from the environment; the root `.env` is loaded only by the npm scripts.
 
 ```bash
 jev gate "Is this ticket about billing?" --state "I was charged twice this month" && echo billing   # the exit code is the answer
@@ -410,7 +411,7 @@ The landing page starts with every level hidden. Opening a level reveals its car
 ├── apps/ten-levels/
 │   ├── src/core/            # re-exports the package's core
 │   ├── src/levels/          # level01 .. level10, one file per option plus index.ts; 6 to 10 re-export their decision code from the package
-│   ├── src/level.ts         # the terminal runner behind npm run level -- 1 .. 10
+│   ├── src/level.ts         # the terminal runner behind pnpm run level 1 .. 10
 │   ├── src/demo.ts          # every level, every option, printed end to end
 │   ├── extensions/          # one pi extension per agentic level, plus report.ts, the side channel every extension reports on
 │   │   ├── jev-guard.ts     # L6: tool_call and tool_result hooks
@@ -422,7 +423,7 @@ The landing page starts with every level hidden. Opening a level reveals its car
 │   ├── server/              # server.mjs (the API), scenarios.mjs (the thirty options), agent-session.mjs (one agent per session), drivers/ (pi, claude, codex)
 │   ├── web/                 # the Vue lab: LevelView, LiveExample, AgentChat, RunVisual, hero-scenes, cost.ts
 │   └── tests/               # offline tests on the mock, 10 live tests against real Jev
-├── scripts/run.mjs          # every npm script's task, the same on Windows, macOS, and Linux
+├── scripts/run.mjs          # every pnpm script's task, the same on Windows, macOS, and Linux
 ├── .claude/
 │   ├── commands/            # /install and /prime
 │   └── skills/hyper-jev/    # the skill you hand your agent to build with Jev
@@ -434,23 +435,23 @@ The landing page starts with every level hidden. Opening a level reveals its car
 ## Commands
 
 ```bash
-npm run web             # build the Vue app, replace a lab already on port 4399, open the browser, serve
-npm run dev             # Vite with hot reload on 5173; needs npm run web running for the API
-npm run level -- 1      # one level in the terminal, 1 through 10
-npm run level -- 4 b    # one option of one level, a, b, or c
-npm run demo            # every level, every option, on the mock
-npm run demo:live       # the same against real Jev
-npm test                # the offline tests, deterministic mock
-npm run test:live       # 10 live tests, one per level
-npm run mcp -- --level 8   # the Jev tools over stdio MCP
-npm run heroes          # re-render the ten hero SVGs
-npm run lint            # oxlint on the Vue app
-npm run docs            # regenerate the capability tables in the READMEs
+pnpm run web            # build the Vue app, replace a lab already on port 4399, open the browser, serve
+pnpm run dev            # Vite with hot reload on 5173; needs pnpm run web running for the API
+pnpm run level 1        # one level in the terminal, 1 through 10
+pnpm run level 4 b      # one option of one level, a, b, or c
+pnpm run demo           # every level, every option, on the mock
+pnpm run demo:live      # the same against real Jev
+pnpm test               # the offline tests, deterministic mock
+pnpm run test:live      # 10 live tests, one per level
+pnpm run mcp --level 8  # the Jev tools over stdio MCP
+pnpm run heroes         # re-render the ten hero SVGs
+pnpm run lint           # oxlint on the Vue app
+pnpm run docs           # regenerate the capability tables in the READMEs
 ```
 
-npm is the only task runner. Every command works the same in a macOS or Linux shell and in Windows PowerShell or cmd. Set `PORT` to serve the lab on another port, and `BROWSER=none` to keep `npm run web` from opening a browser.
+pnpm is the only task runner. Every command works the same in a macOS or Linux shell and in Windows PowerShell or cmd. Set `PORT` to serve the lab on another port, and `BROWSER=none` to keep `pnpm run web` from opening a browser.
 
-Every command is the same on Windows, macOS, and Linux: each npm script calls `scripts/run.mjs`.
+Every command is the same on Windows, macOS, and Linux: each pnpm script calls `scripts/run.mjs`.
 For the agentic setup walkthrough, run `/install` in Claude Code.
 
 ```bash
@@ -461,14 +462,14 @@ For the agentic setup walkthrough, run `/install` in Claude Code.
 ## How to run it end to end
 
 ```bash
-npm run web                    # http://127.0.0.1:4399 opens
+pnpm run web  # http://127.0.0.1:4399 opens
 # Level 1: pick a use case, step through Set A to Set E, Run live, watch the injection score fall from 0.99 to 0.01
-# Level 4: Run live on Set C, rm -rf node_modules && npm install comes back reversible at low confidence and asks a human
-# Level 6: press Go on Set A, watch rm -rf blocked while npm test runs
+# Level 4: Run live on Set C, rm -rf node_modules && pnpm install comes back reversible at low confidence and asks a human
+# Level 6: press Go on Set A, watch rm -rf blocked while pnpm test runs
 # Level 7: press Go on Set A, wait for it to finish, press the Then chip, press Go again
 #          the first request stays silent, the gear switch earns a tier and a compact_now
 # Level 8: press Go, watch two ask_jev_file_bool rows with no read rows before them
-# Level 10: press Go, watch the agent run npm test through ask_jev, classify the failure, and fix it
+# Level 10: press Go, watch the agent run pnpm test through ask_jev, classify the failure, and fix it
 ```
 
 Cmd+Enter runs the example or sends the prompt.

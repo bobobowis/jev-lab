@@ -16,28 +16,28 @@ jobs:
         node: ["22.18", "24"]
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4 # the version comes from packageManager in package.json
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - uses: oven-sh/setup-bun@v2
-      - run: npm install
-      - run: npm test
-      - run: npm run demo
-      - name: one level through npm (PowerShell on Windows, bash elsewhere)
-        run: npm run level -- 1 a
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm run demo
+      - name: one level through pnpm (PowerShell on Windows, bash elsewhere)
+        run: pnpm run level 1 a
       # The README's commands as written, each its own step: in PowerShell only a step's last exit code counts.
-      - run: bun install --cwd apps/ten-levels/web
-      - run: npm run lint
-      - run: npm run docs -- --check
-      - run: npm run level -- 4 b
-      - run: npm pack -w packages/jev-kit
-      - name: npm run web builds, serves the lab, and stops on request
+      - run: pnpm run lint
+      - run: pnpm run docs --check
+      - run: pnpm run level 4 b
+      - run: pnpm --filter @bobobowis/jev-kit pack
+      - name: pnpm run web builds, serves the lab, and stops on request
         shell: bash
         env:
           BROWSER: none
           PORT: "4499"
         run: |
-          npm run web > web.log 2>&1 &
+          pnpm run web > web.log 2>&1 &
           for i in $(seq 1 180); do curl -sf http://127.0.0.1:4499/api/state > /dev/null && break; sleep 1; done
           curl -sf http://127.0.0.1:4499/ | grep -q 'id="app"' || { cat web.log; exit 1; }
           curl -sf -X POST -H 'x-jev-lab: shutdown' http://127.0.0.1:4499/api/shutdown
@@ -60,10 +60,10 @@ jobs:
       - name: the packed package installs and runs in an empty project
         shell: bash
         run: |
-          cd packages/jev-kit && npm pack --pack-destination "$RUNNER_TEMP" && cd -
+          cd packages/jev-kit && pnpm pack --pack-destination "$RUNNER_TEMP" && cd -
           mkdir "$RUNNER_TEMP/consumer" && cd "$RUNNER_TEMP/consumer"
-          npm init -y > /dev/null
-          npm install "$RUNNER_TEMP"/bobobowis-jev-kit-*.tgz
-          npx jev --help
-          set +e; npx jev gate "Is this a test?" --state "yes, a CI smoke test" --mock; code=$?; set -e
+          pnpm init > /dev/null
+          pnpm add "$RUNNER_TEMP"/bobobowis-jev-kit-*.tgz
+          pnpm exec jev --help
+          set +e; pnpm exec jev gate "Is this a test?" --state "yes, a CI smoke test" --mock; code=$?; set -e
           test "$code" = 0 -o "$code" = 1

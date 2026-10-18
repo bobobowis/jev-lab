@@ -30,14 +30,14 @@ console.log(ranked);
 
 ```bash
 JEV_BACKEND=mock node example.ts
-npm test
+pnpm test
 ```
 
 ## Boundaries and tests
 
 [Existing tests](../../templates/starter/tests/level09.test.ts) cover a real link among 40 options, oversized link rejection, a taxonomy's expected winning branch, callback data, and reranking order. The test named “keep honors the threshold” only asserts sorting; add explicit keep-boundary assertions.
 
-The bundled implementation preserves completed leaves in the next candidate pool while expanding their siblings, then sorts and applies the beam-width limit. The [starter regression tests](../../templates/starter/tests/starter-regressions.test.ts), included in `npm test`, verify that an early leaf and a deeper sibling leaf both survive with beam width 2. This fixes accidental leaf loss; it does not guarantee exhaustive search or preservation of every leaf after pruning.
+The bundled implementation preserves completed leaves in the next candidate pool while expanding their siblings, then sorts and applies the beam-width limit. The [starter regression tests](../../templates/starter/tests/starter-regressions.test.ts), included in `pnpm test`, verify that an early leaf and a deeper sibling leaf both survive with beam width 2. This fixes accidental leaf loss; it does not guarantee exhaustive search or preservation of every leaf after pruning.
 
 A callback fires once per expanded parent, not once per depth. Request count depends on the beam and tree; there is no general two-request guarantee. Validate a finite positive integer beam width, acyclic tree, maximum depth, total node/request budget, unique sibling names, and at most 255 children per parent.
 

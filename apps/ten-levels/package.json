@@ -20,6 +20,6 @@
     "level": "node ../../scripts/run.mjs level"
   },
   "dependencies": {
-    "@bobobowis/jev-kit": "0.1.0"
+    "@bobobowis/jev-kit": "workspace:*"
   }
 }

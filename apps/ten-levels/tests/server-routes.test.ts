@@ -45,7 +45,7 @@ test("chooseHarness: the request, then JEV_AGENT, then PATH order pi, claude, co
   assert.equal(chooseHarness("codex", { PATH: both }), "codex");
   assert.equal(chooseHarness("", { PATH: both, JEV_AGENT: "codex" }), "codex");
   assert.equal(chooseHarness("claude", { PATH: both, JEV_AGENT: "codex" }), "claude");
-  assert.throws(() => chooseHarness("pi", { PATH: both }), /pi is not installed or not on PATH\. Install it with: npm install -g @earendil-works\/pi-coding-agent/);
+  assert.throws(() => chooseHarness("pi", { PATH: both }), /pi is not installed or not on PATH\. Install it with: pnpm add -g @earendil-works\/pi-coding-agent/);
   assert.throws(() => chooseHarness("cursor", { PATH: both }), /unknown harness "cursor"/);
   assert.deepEqual(harnessState({ PATH: both }).harnesses.map((h: any) => [h.name, h.available]), [["pi", false], ["claude", true], ["codex", true]]);
 });
@@ -62,7 +62,7 @@ test("POST /api/agent/start with no agent installed names all three and how to i
   assert.equal(r.status, 409);
   const { error } = await r.json();
   assert.match(error, /No coding agent found/);
-  for (const n of ["pi", "claude", "codex"]) assert.match(error, new RegExp(`${n} \\(npm install -g`));
+  for (const n of ["pi", "claude", "codex"]) assert.match(error, new RegExp(`${n} \\(pnpm add -g`));
   assert.match(error, /Levels 1 to 5 work without one/);
 });
 
