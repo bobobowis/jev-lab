@@ -73,6 +73,8 @@ npm run mcp -- --level 8 # the Jev tools over stdio MCP
 ```
 
 npm is the only task runner, and every command above works the same on Windows, macOS, and Linux.
+On Windows PowerShell with scripts disabled, `npm` fails with an execution policy error: use
+`npm.cmd`, or ask the user before running `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
 
 ## Using Jev from your own harness
 

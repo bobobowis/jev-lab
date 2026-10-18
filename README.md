@@ -27,7 +27,7 @@ Open the repo in Claude Code and run `/install`, or ask Codex, pi, or any other 
 
 **Prereqs:** [Node 22.18+](https://nodejs.org) (24 recommended), [bun](https://bun.sh), git, an [OpenRouter key](https://openrouter.ai/keys) for live runs, and for levels 6 to 10 one coding agent: [pi 0.85.1+](https://github.com/earendil-works/pi-mono), [Claude Code](https://claude.com/claude-code) 2.1.302+, or [Codex](https://github.com/openai/codex) 0.162+.
 
-These run the same in a macOS or Linux shell and in Windows PowerShell or cmd:
+These run the same in a macOS or Linux shell and in Windows PowerShell or cmd. If PowerShell says running scripts is disabled ("la ejecución de scripts está deshabilitada"), allow them for your user once with `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, or type `npm.cmd` and `bun.cmd` instead of `npm` and `bun`.
 
 ```bash
 npm install                                    # links the workspace and builds packages/jev-kit; no runtime dependencies
