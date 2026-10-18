@@ -72,8 +72,12 @@ The agent process SHALL receive only the shell basics, the Jev keys, the chosen 
 - **THEN** the agent's bash tool cannot print it
 
 ### Requirement: Agent model per harness
-The agent model SHALL default per harness and be overridable with `JEV_AGENT_MODEL`; the chosen model SHALL be shown in the window.
+The agent model SHALL default per harness and be overridable per harness with `JEV_AGENT_MODEL_PI`, `JEV_AGENT_MODEL_CLAUDE`, or `JEV_AGENT_MODEL_CODEX`, then for every harness with `JEV_AGENT_MODEL`; the chosen model SHALL be shown in the window.
 
 #### Scenario: Override under Claude Code
 - **WHEN** `JEV_AGENT_MODEL=claude-haiku-5-5` and the harness is Claude Code
 - **THEN** the session uses that model and the window shows it
+
+#### Scenario: A pi model does not reach Codex
+- **WHEN** `JEV_AGENT_MODEL_PI=openai/gpt-6.1-sol` is set and the harness is Codex
+- **THEN** the Codex session uses its own default model
