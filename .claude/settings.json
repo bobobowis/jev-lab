@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__jev__ask_jev",
+      "mcp__jev__ask_jev_files",
+      "mcp__jev__pick_first_file",
+      "mcp__jev__ask_jev_file_bool",
+      "mcp__jev__ask_jev_file_choice",
+      "mcp__jev__ask_jev_file_score"
+    ]
+  },
+  "enabledMcpjsonServers": ["jev"],
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/prompt-route.mjs\"", "timeout": 8 }] }
+    ],
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/commit-risk.mjs\"", "timeout": 15 }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Write|Edit|MultiEdit|NotebookEdit", "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-edit.mjs\"", "timeout": 12 }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop-tests.mjs\"", "timeout": 300 }] }
+    ]
+  }
+}

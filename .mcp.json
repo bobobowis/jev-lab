@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "jev": {
+      "command": "node",
+      "args": [
+        "--env-file-if-exists=.env",
+        "packages/jev-kit/dist/cli/index.js",
+        "mcp",
+        "--tools",
+        "ask_jev,ask_jev_files,pick_first_file,ask_jev_file_bool,ask_jev_file_choice,ask_jev_file_score"
+      ]
+    }
+  }
+}
