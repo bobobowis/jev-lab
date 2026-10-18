@@ -5,7 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Readable } from "node:stream";
@@ -80,7 +80,7 @@ test("ask: a command the bash gate refuses never runs", async () => {
   const r = await run(["ask", "--questions", Q, "--command", "rm -rf src", "--cwd", dir], { client: bash("irreversible", 0.99, 0.95) });
   assert.equal(r.code, 1);
   assert.match(r.err, /refused by the bash gate/);
-  assert.equal(spawnSync("ls", [join(dir, "src")]).status, 0);
+  assert.ok(existsSync(join(dir, "src")), "src must survive the refused rm -rf");
 });
 
 test("ask: bad questions and missing options exit non-zero with a reason", async () => {
