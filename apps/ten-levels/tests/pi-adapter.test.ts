@@ -138,3 +138,17 @@ test("ask-jev: the nudge is added once, and the ledger is reported after the run
   const ledger = pi.entries.find(([t]) => t === "jev-ledger");
   assert.equal((ledger![1] as any).calls, 1);
 });
+
+test("jev-compact: compact_now reports the size after compacting, or unknown until pi has one, never 0", async () => {
+  for (const [after, expected] of [[{ tokens: null, contextWindow: 200_000, percent: null }, null], [{ tokens: 4_000, contextWindow: 200_000, percent: 2 }, 2]] as const) {
+    const pi = fakePi();
+    compact.install(pi, { Type, keepRecentTokens: () => 0 });
+    const tool = pi.registered.find((t) => t.name === "compact_now");
+    let usage: any = { tokens: 60_000, contextWindow: 200_000, percent: 30 };
+    const ctx = { cwd: SANDBOX, getContextUsage: () => usage, compact: (o: any) => { usage = after; o.onComplete?.(); } };
+    await tool.execute("id", { note_to_self: "next: write CONTRIBUTING.md" }, undefined, undefined, ctx);
+    const done = pi.entries.find(([t]) => t === "jev-compact-done")?.[1] as any;
+    assert.ok(done, "a compact-done entry");
+    assert.equal(done.usage === null ? null : done.usage.pct, expected);
+  }
+});

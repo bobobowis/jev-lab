@@ -153,7 +153,7 @@ function onItem({ event, data }: AgentItem) {
       } else if (d.kind === "compact") {
         return; // the compact_now tool row already shows the note
       } else if (d.kind === "compact-done") {
-        add({ kind: "compact", tag: "compacted", title: `context now ${Number(d.usage?.pct ?? 0).toFixed(1)}%`, details: d });
+        add({ kind: "compact", tag: "compacted", title: d.usage ? `context now ${Number(d.usage.pct ?? 0).toFixed(1)}%` : "done; the new context size shows after the next reply", details: d });
       } else if (d.kind === "ledger") {
         add({ kind: "system", tag: "ledger", title: d.summary, details: d });
       } else if (d.kind === "error") {

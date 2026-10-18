@@ -121,7 +121,8 @@ export function install(pi: any, deps: CompactDeps) {
       pendingCompaction = true;
       ctx.compact({
         customInstructions: `Keep this note from the agent verbatim at the top of the summary:\n${params.note_to_self}`,
-        onComplete: () => report(pi, "compact-done", { usage: usageOf(ctx) }),
+        // Right after compacting pi has no token count until the next reply: report that as unknown, not 0.
+        onComplete: () => report(pi, "compact-done", { usage: ctx.getContextUsage?.()?.tokens == null ? null : usageOf(ctx) }),
         onError: (error: any) => { pendingCompaction = false; report(pi, "error", { hook: "compact_now", message: error?.message ?? String(error) }); },
       });
       return { content: [{ type: "text", text: "Compaction started. Your note will lead the summary. Continue with the current request." }] };
