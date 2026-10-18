@@ -5,23 +5,26 @@ hooks, an MCP server, and a CLI. Zero runtime dependencies. Node 22.18 or later.
 
 Jev answers typed questions about a state (yes or no, pick one of your options, a position on your
 scale) in about 300 ms for a fraction of a cent. This package is the reusable part of
-[10 Levels of Jev](../../README.md): the client and the decisions the lab teaches, packaged so a
+[10 Levels of Jev](https://github.com/bobobowis/ten-levels-of-jev): the client and the decisions the lab teaches, packaged so a
 project or a coding agent can use them directly.
 
 ## Install
 
-The package is not on npm yet. Use it from this repository's workspace, or pack it and install the
-tarball anywhere:
+```bash
+npm install @bobobowis/jev-kit        # or: pnpm add @bobobowis/jev-kit
+npx jev --help
+```
+
+Or run the command without installing anything:
 
 ```bash
-# In this repo: pnpm install at the root links it and builds dist/
-pnpm install
-
-# Anywhere else: pack it here, install the tarball there
-pnpm --filter @bobobowis/jev-kit pack           # writes bobobowis-jev-kit-0.1.0.tgz
-cd ../my-project && pnpm add ../ten-levels-of-jev/bobobowis-jev-kit-0.1.0.tgz
-pnpm exec jev --help
+npx @bobobowis/jev-kit gate "Is this ticket about billing?" --state "I was charged twice this month"
+npx @bobobowis/jev-kit setup --harness claude --guards bash,write --tools ask_jev
 ```
+
+Run through `npx` or `pnpm dlx`, `jev setup` writes `npx -y @bobobowis/jev-kit@<version>` into the
+hooks and the MCP entry, not a path into the npx cache, so the config keeps working after the cache is cleared.
+Installed in the project, it writes node and the installed bin.
 
 ## Keys
 

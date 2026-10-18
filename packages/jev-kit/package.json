@@ -4,6 +4,18 @@
   "description": "Jev, TypeSafe AI's System One decision model, as a typed client, guards, file reads, agent tools, hooks, an MCP server, and a CLI. Zero runtime dependencies.",
   "type": "module",
   "license": "MIT",
+  "author": "bobobowis",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bobobowis/ten-levels-of-jev.git",
+    "directory": "packages/jev-kit"
+  },
+  "homepage": "https://github.com/bobobowis/ten-levels-of-jev/tree/main/packages/jev-kit#readme",
+  "bugs": "https://github.com/bobobowis/ten-levels-of-jev/issues",
+  "keywords": ["jev", "typesafe", "llm", "classifier", "decision", "guardrails", "claude-code", "codex", "mcp", "hooks", "agents"],
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=22.18"
   },
