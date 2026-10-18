@@ -29,7 +29,8 @@ agent picked in the window's Harness menu: pi with the level's extension loaded,
 Codex with the level's hooks (`jev hook`) and tools (`jev mcp`). Each gets an explicit tool
 allowlist. You prompt it, the box locks, Go becomes Stop, and every tool call, hook decision, and
 Jev call lands as one line. Click a line for the details. The footer shows the agent and model, the
-LLM cost, the Jev cost, and the context bar; a figure the agent doesn't report stays blank.
+LLM cost, the Jev cost, and the context bar. Codex reports tokens but no cost, so its LLM figure is
+tokens in and out; anything an agent doesn't report stays blank.
 
 | Level | What the agent window shows |
 |---|---|

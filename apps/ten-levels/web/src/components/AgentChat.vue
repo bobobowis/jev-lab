@@ -35,6 +35,12 @@ const contextWindow = ref<number | null>(null);
 /** null until the harness reports it, and for good under Codex. */
 const llmCost = ref<number | null>(null);
 const statsSeen = ref(false);
+/** Session token totals, shown in place of the cost when the harness reports tokens but no cost (Codex). */
+const llmTokens = ref<{ input: number; output: number } | null>(null);
+const llmLabel = computed(() => llmCost.value !== null ? money(llmCost.value)
+  : llmTokens.value ? `${fmt(llmTokens.value.input)} in · ${fmt(llmTokens.value.output)} out` : "");
+const llmTitle = computed(() => llmCost.value !== null || !statsSeen.value ? ""
+  : llmTokens.value ? "tokens this session; this harness reports no cost" : "not reported by this harness");
 const sessionHarness = ref("");
 const jevCost = ref(0);
 const jevCalls = ref(0);
@@ -95,6 +101,8 @@ function onItem({ event, data }: AgentItem) {
     case "stats":
       statsSeen.value = true;
       llmCost.value = typeof data.cost === "number" ? data.cost : null;
+      // Codex's counts are thread totals, so the latest is the session's.
+      llmTokens.value = typeof data.tokens?.input === "number" ? { input: data.tokens.input, output: data.tokens.output ?? 0 } : null;
       if (data.contextUsage) {
         contextPct.value = data.contextUsage.percent ?? null;
         contextTokens.value = data.contextUsage.tokens ?? null;
@@ -172,7 +180,7 @@ async function boot() {
   error.value = "";
   rows.value = [];
   toolRows.clear();
-  llmCost.value = null; jevCost.value = 0; jevCalls.value = 0; statsSeen.value = false;
+  llmCost.value = null; jevCost.value = 0; jevCalls.value = 0; statsSeen.value = false; llmTokens.value = null;
   avoided.value = [];
   contextPct.value = null; contextTokens.value = null; contextWindow.value = null;
   if (props.blocked) { starting.value = false; return; }
@@ -259,7 +267,7 @@ const pretty = (v: unknown) => esc(typeof v === "string" ? v : JSON.stringify(v,
     <div class="chat-head">
       <span class="chat-model" :title="model"><b v-if="sessionHarness">{{ harnessLabel(sessionHarness) }}</b> {{ shortModel || (blocked ? "" : "starting…") }}</span>
       <span class="spacer"></span>
-      <span class="chat-cost" :title="llmCost === null && statsSeen ? 'not reported by this harness' : ''"><b>LLM</b> {{ llmCost === null ? "" : money(llmCost) }}</span>
+      <span class="chat-cost" :title="llmTitle"><b>LLM</b> {{ llmLabel }}</span>
       <span class="chat-cost"><b>Jev</b> {{ money(jevCost) }}<small v-if="jevCalls"> {{ jevCalls }} call{{ jevCalls === 1 ? "" : "s" }}</small></span>
       <span class="ctx" :title="ctxLabel">
         <span class="ctx-track"><span class="ctx-fill" :style="{ width: `${Math.min(100, contextPct ?? 0)}%` }"></span></span>
